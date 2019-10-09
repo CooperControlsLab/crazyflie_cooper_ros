@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg import Twist,Vector3
-
 from crazyflie_driver.msg import Hover
 
-rospy.init_node('test')
+rospy.init_node('velocity publisher')
 # pub = rospy.Publisher('crazyflie1/cmd_vel', Twist, queue_size=0)
 rate = rospy.Rate(2)
 pub = rospy.Publisher('cf1/cmd_hover/', Hover, queue_size=0)
@@ -21,7 +20,7 @@ msg.zDistance = 0.5
 msg.header.seq = 1
 msg.header.stamp = rospy.Time.now()
 # pub.publish(msg)
-# rate.sleep()
+# rate.sleep() 
 
 while not rospy.is_shutdown():
     pub.publish(msg)
