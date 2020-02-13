@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<launch>
+ 
+  <arg name="uri2" default="radio://0/80/2M/E7E7E7E702" />
+  <arg name="frame2" default="/vicon/crazyflie2/crazyflie2" />
+  <arg name="x2" default="-1.2" />
+  <arg name="y2" default="0" />
+  <arg name="z2" default="1" />
+
+
+  <arg name="uri3" default="radio://0/80/2M/E7E7E7E703" />
+  <arg name="frame3" default="/vicon/crazyflie3/crazyflie3" />
+  <arg name="x3" default="-0.4" />
+  <arg name="y3" default="0" />
+  <arg name="z3" default="1" />
+
+
+  <arg name="uri4" default="radio://0/80/2M/E7E7E7E704" />
+  <arg name="frame4" default="/vicon/crazyflie4/crazyflie4" />
+  <arg name="x4" default="0.4" />
+  <arg name="y4" default="0" />
+  <arg name="z4" default="1" />
+
+
+  <arg name="uri5" default="radio://0/80/2M/E7E7E7E705" />
+  <arg name="frame5" default="/vicon/crazyflie5/crazyflie5" />
+  <arg name="x5" default="1.2" />
+  <arg name="y5" default="0" />
+  <arg name="z5" default="1" />
+
+  <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch">
+  </include>
+
+<!--crazyfle 2 node-->
+  <group ns="crazyflie2">
+    <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
+      <arg name="uri" value="$(arg uri2)" />
+      <arg name="tf_prefix" value="crazyflie2" />
+      <arg name="enable_logging" value="False" />
+    </include>
+
+    <include file="$(find crazyflie_controller)/launch/crazyflie2.launch">
+      <arg name="frame" value="$(arg frame2)" />
+    </include>
+
+    <node name="pose" pkg="crazyflie_demo" type="publish_pose.py" output="screen">
+      <param name="name" value="goal" />
+      <param name="rate" value="10" />
+      <param name="x" value="$(arg x2)" />
+      <param name="y" value="$(arg y2)" />
+      <param name="z" value="$(arg z2)" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon" args="0 0 0 0 0 0 1 $(arg frame2) /crazyflie2/base_link 100" />
+  </group>
+
+<!--crazyfle 3 node-->
+<group ns="crazyflie3">
+    <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
+      <arg name="uri" value="$(arg uri3)" />
+      <arg name="tf_prefix" value="crazyflie3" />
+      <arg name="enable_logging" value="False" />
+    </include>
+
+    <include file="$(find crazyflie_controller)/launch/crazyflie2.launch">
+      <arg name="frame" value="$(arg frame3)" />
+    </include>
+
+    <node name="pose" pkg="crazyflie_demo" type="publish_pose.py" output="screen">
+      <param name="name" value="goal" />
+      <param name="rate" value="10" />
+      <param name="x" value="$(arg x3)" />
+      <param name="y" value="$(arg y3)" />
+      <param name="z" value="$(arg z3)" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon" args="0 0 0 0 0 0 1 $(arg frame2) /crazyflie3/base_link 100" />
+  </group>
+
+<!--crazyfle 4 node-->
+<group ns="crazyflie4">
+    <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
+      <arg name="uri" value="$(arg uri4)" />
+      <arg name="tf_prefix" value="crazyflie4" />
+      <arg name="enable_logging" value="False" />
+    </include>
+
+    <include file="$(find crazyflie_controller)/launch/crazyflie2.launch">
+      <arg name="frame" value="$(arg frame4)" />
+    </include>
+
+    <node name="pose" pkg="crazyflie_demo" type="publish_pose.py" output="screen">
+      <param name="name" value="goal" />
+      <param name="rate" value="10" />
+      <param name="x" value="$(arg x4)" />
+      <param name="y" value="$(arg y4)" />
+      <param name="z" value="$(arg z4)" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon" args="0 0 0 0 0 0 1 $(arg frame2) /crazyflie4/base_link 100" />
+  </group>
+
+<!--crazyfle 5 node-->
+<group ns="crazyflie5">
+    <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
+      <arg name="uri" value="$(arg uri5)" />
+      <arg name="tf_prefix" value="crazyflie5" />
+      <arg name="enable_logging" value="False" />
+    </include>
+
+    <include file="$(find crazyflie_controller)/launch/crazyflie2.launch">
+      <arg name="frame" value="$(arg frame5)" />
+    </include>
+
+    <node name="pose" pkg="crazyflie_demo" type="publish_pose.py" output="screen">
+      <param name="name" value="goal" />
+      <param name="rate" value="10" />
+      <param name="x" value="$(arg x5)" />
+      <param name="y" value="$(arg y5)" />
+      <param name="z" value="$(arg z5)" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="vicon" args="0 0 0 0 0 0 1 $(arg frame2) /crazyflie5/base_link 100" />
+  </group>
+
+
+  <!-- run vicon bridge -->
+  <include file="$(find vicon_bridge)/launch/vicon.launch"/>
+
+</launch>
