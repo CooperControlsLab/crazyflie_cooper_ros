@@ -120,6 +120,12 @@ roslaunch crazyflie_demo a_standing_wave_multi.launch
 
 **Notes**: Follows the same trajectory tracking algorithm described in demo above
 
+[![](http://img.youtube.com/vi/urXF8xXFFHA/0.jpg)](http://www.youtube.com/watch?v=urXF8xXFFHA "Standing Wave Trajectories")
+
+#### Multi Drone Trajectory Tracking Following Circular Trajectories
+
+[![](http://img.youtube.com/vi/hk8qnfDngmo/0.jpg)](http://www.youtube.com/watch?v=hk8qnfDngmo "Circular Trajectories")
+
 #### Magic Wand Demo
 
 **Description**: Runs an interactive demo where a swarm of Crazyflie drones track a pencil object, see video: https://www.youtube.com/watch?v=J0sCPa3kySQ. 
@@ -137,6 +143,8 @@ Start each drone in a seperate terminal window by calling the following services
 Can also run `emergency` or `land` services to either cut power or conduct a graceful landing maneuver
 
 **Notes**: Uses the stock cpp controller contained in the Crazyflie_controller directory
+
+[![](http://img.youtube.com/vi/J0sCPa3kySQ/0.jpg)](http://www.youtube.com/watch?v=J0sCPa3kySQ "Magic Wand Demo")
 
 ### Crazyflie_demo\model
 
