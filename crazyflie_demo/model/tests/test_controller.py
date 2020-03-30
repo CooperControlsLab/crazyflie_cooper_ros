@@ -9,13 +9,15 @@ from data_plotter import DataPlotter
 from crazyflie_dynamics import CrazyflieDynamics
 from crazyflie_controller import RateController, AttitudeController, ControlMixer, AltitudeController, XYController, YawController
 import crazyflie_param as P
+from crazyflie_animation import CrazyflieAnimation
 
 def test_altitude(z_c):
     cf = CrazyflieDynamics()
     plot = DataPlotter()
+    anim = CrazyflieAnimation()
 
     rate_ctrl = RateController()
-    attitude_ctrl = AttitudeController()
+    attitude_ctrl = AttitudeController(P.t_att)
     ctrl_mixer = ControlMixer()
     altitiude_ctrl = AltitudeController()
 
@@ -60,6 +62,7 @@ def test_altitude(z_c):
             t = t + P.t_ob
             
         plot.update(t, r, cf.state, u)
+        anim.update(cf.state)
         plt.pause(0.0001)
     
     print('Press key to close')
@@ -209,18 +212,18 @@ def test_attitude_ctrl(phi_c, theta_c):
     plt.waitforbuttonpress()
     plt.close()
 
-
 def test_xy(x_c, y_c, z_c, psi_c):
     cf = CrazyflieDynamics()
     plot = DataPlotter()
+    anim = CrazyflieAnimation()
 
     # Create class objects
     rate_ctrl = RateController()
-    attitude_ctrl = AttitudeController(kp=100.0, ki=2.0, kd=10.0)
+    attitude_ctrl = AttitudeController(t=P.t_att, kp=3.5, ki=2.0, kd=1.0)
     rate_ctrl = RateController()
     ctrl_mixer = ControlMixer()
     altitiude_ctrl = AltitudeController()
-    xy_ctrl = XYController(cap=0.2)
+    xy_ctrl = XYController(t=P.t_phys, kp=20.0, ki=2.0, cap=0.1396)
     yaw_ctrl = YawController()
 
     # off-borad controller input values
@@ -244,8 +247,8 @@ def test_xy(x_c, y_c, z_c, psi_c):
     while t < P.t_end: # plotter can run the slowest
         t_next_plot = t + P.t_plot
         
-        while t < t_next_plot: # offboard controller is slowest at 100 hz
-            t_next_ob = t + P.t_ob
+        while t < t_next_plot: # offboard controller is slowest at 30 hz
+            t_next_phys = t + P.t_phys
             
             # Altitude off-board controller update
             u_ob[3,0] = altitiude_ctrl.update(r.item(2), cf.state.item(2))
@@ -256,10 +259,10 @@ def test_xy(x_c, y_c, z_c, psi_c):
                 # y_c    , y
                 r.item(1), cf.state.item(1), \
                 0.0,
-                # cf.state.item(3), \
-                P.t_ob)
+                # cf.state.item(3)
+                )
 
-            while t < t_next_ob: # attitude controller runs at 250 hz
+            while t < t_next_phys: # attitude controller runs at 250 hz
                 t_next_att = t + P.t_att
 
                 # Conduct attitude control
@@ -277,6 +280,7 @@ def test_xy(x_c, y_c, z_c, psi_c):
                     y = cf.update(u)
 
         plot.update(t, r, cf.state, u)
+        anim.update(cf.state)
         plt.pause(0.01)
     
     print('Press key to close')
@@ -286,6 +290,7 @@ def test_xy(x_c, y_c, z_c, psi_c):
 def test_all(x_c, y_c, z_c, psi_c):
     cf = CrazyflieDynamics()
     plot = DataPlotter()
+    anim = CrazyflieAnimation()
 
     # Create class objects
     rate_ctrl = RateController()
@@ -351,6 +356,7 @@ def test_all(x_c, y_c, z_c, psi_c):
                     
 
         plot.update(t, r, cf.state, u)
+        anim.update(cf.state)
         plt.pause(0.01)
     
     print('Press key to close')
@@ -358,7 +364,7 @@ def test_all(x_c, y_c, z_c, psi_c):
     plt.close()
 
 if __name__ == "__main__":
-    # test_altitude(0.5) # works! 2/16/2020
+    # test_altitude(1.0) # works! 2/16/2020
 
     # test_ctrl_mixer()
     # test_rate_ctrl()

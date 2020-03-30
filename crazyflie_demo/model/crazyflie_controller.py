@@ -44,7 +44,7 @@ class RateController:
 
 class AttitudeController:
     # TODO: integrator makes unstable
-    def __init__(self, kp=10.0, ki=0.0, kd=0.0, cap=100.0):
+    def __init__(self, t, kp=10.0, ki=0.0, kd=0.0, cap=100.0):
         self.kp_phi = kp      # Roll Attitude Proportional Gain
         self.ki_phi = ki      # Roll Attitude Integral Gain
         self.kd_phi = kd
@@ -57,22 +57,22 @@ class AttitudeController:
         self.e_theta_hist = 0.0
         self.e_theta_prev = 0.0
 
-        self.t_phys = 1/30.0
+        self.t_att = t
 
         self.cap = cap
 
     def update(self, phi_c, theta_c, state): # phi controls neg y, theta controls pos x
         # Calculate errors
         e_phi = phi_c - state.item(5)
-        self.e_phi_hist += (e_phi * self.t_phys)
-        e_phi_der = (e_phi - self.e_phi_prev) / self.t_phys
+        self.e_phi_hist += (e_phi * self.t_att)
+        e_phi_der = (e_phi - self.e_phi_prev) / self.t_att
         self.e_phi_prev = e_phi
 
         p_c = (self.kp_phi * e_phi) + (self.ki_phi * self.e_phi_hist) +\
             (self.kd_phi * e_phi_der)
         
         e_theta = theta_c - state.item(4)
-        self.e_theta_hist += (e_theta * self.t_phys)
+        self.e_theta_hist += (e_theta * self.t_att)
         q_c = (self.kp_theta * e_theta) + (self.ki_theta * self.e_theta_hist)
 
         if np.abs(q_c) > self.cap:
@@ -129,7 +129,7 @@ class AltitudeController:
         return del_omega_cap
 
 class XYController:
-    def __init__(self, kp=20.0, ki=2.0, cap=0.2):
+    def __init__(self, t, kp=30.0, ki=2.0, cap=0.2):
         self.kp = kp
         self.ki = ki
         self.cap = cap
@@ -137,24 +137,25 @@ class XYController:
         self.y_b_prev = 0.0
         self.xe_b_hist = 0.0
         self.ye_b_hist = 0.0
+        self.t_ob = t
     
-    def update(self, x_c, x, y_c, y, psi, t):
+    def update(self, x_c, x, y_c, y, psi):
         xe = x_c - x; ye = y_c - y # Get position error
         # print('xe {}\nye {}'.format(xe, ye))
 
         x_b = x * np.cos(psi) + y * np.sin(psi) # Get x in body frame
-        u = (x_b - self.x_b_prev) / t # u is x-vel in body frame
+        u = (x_b - self.x_b_prev) / self.t_ob # u is x-vel in body frame
         self.x_b_prev = x_b # Reset previous val
 
         y_b = -(x * np.sin(psi)) + y * np.cos(psi) # Get y in body frame
-        v = (y_b - self.y_b_prev) / t # v is y-vel in body frame
+        v = (y_b - self.y_b_prev) / self.t_ob # v is y-vel in body frame
         self.y_b_prev = y_b # Reset previous val
 
         xe_b = xe * np.cos(psi) + ye * np.sin(psi) # Get errors in body frame
         ye_b = -(xe * np.sin(psi)) + ye * np.cos(psi)
 
-        self.xe_b_hist += ((xe_b - u) * t) # Accumulate and store histroical error
-        self.ye_b_hist += ((ye_b - v) * t)
+        self.xe_b_hist += ((xe_b - u) * self.t_ob) # Accumulate and store histroical error
+        self.ye_b_hist += ((ye_b - v) * self.t_ob)
 
         phi_c   = ((xe_b - u) * ( self.kp)) + (self.xe_b_hist * ( self.ki)) # Eq. 3.1.11 and Eq. 3.1.12
         theta_c = ((ye_b - v) * (-self.kp)) + (self.ye_b_hist * (-self.ki))
