@@ -11,10 +11,12 @@ from crazyflie_controller import RateController, AttitudeController, ControlMixe
 import crazyflie_param as P
 from crazyflie_animation import CrazyflieAnimation
 
-def test_altitude(z_c):
+def test_altitude(z_c, show_anim=True, save_plot=False):
     cf = CrazyflieDynamics()
-    plot = DataPlotter()
-    anim = CrazyflieAnimation()
+    
+    if show_anim:
+        plot = DataPlotter()
+        anim = CrazyflieAnimation()
 
     rate_ctrl = RateController()
     attitude_ctrl = AttitudeController(P.t_att)
@@ -43,31 +45,48 @@ def test_altitude(z_c):
 
     t = P.t_start
 
-    counter = 0.0
+    if save_plot:
+        fig, ax = plt.subplots()
+        ax.set_title("CF Altitude Simulation")
+        ax.set_xlabel("time [s]")
+        ax.set_ylabel("z [m]")
+        x_list = []
+        y_list = []
+        ref_list = []
 
     while t < P.t_end: # plotter can run slowly
         t_next_plot = t + P.t_plot
         
         while t < t_next_plot: # offboard controller is slowest at 100 hz
-            counter += P.t_ob
-            # print("time is at: ", counter)
             t_next_ob = t + P.t_ob
             u_ob[3,0] = altitiude_ctrl.update(r.item(2), cf.state.item(2))
-            # print("thrust:, \n", u_ob.item(3))
+            print("thrust:, \n", u_ob.item(3))
 
             u = ctrl_mixer.update(u_ob.item(3), del_phi, del_theta, del_psi) # output is PWM signal
             # print("u_pwm: \n", u_pwm.item(0))
             
             y = cf.update(u) # rpm is used in cf state update equations
             t = t + P.t_ob
-            
-        plot.update(t, r, cf.state, u)
-        anim.update(cf.state)
-        plt.pause(0.0001)
-    
-    print('Press key to close')
-    plt.waitforbuttonpress()
-    plt.close()
+
+            if save_plot:
+                x_list.append(t)
+                y_list.append(cf.state.item(2))
+                ref_list.append(r.item(2))
+        
+        if show_anim:
+            plot.update(t, r, cf.state, u)
+            anim.update(cf.state)
+            plt.pause(0.0000001)
+
+    if save_plot:
+        ax.plot(x_list, y_list, c='r')
+        ax.plot(x_list, ref_list, c='b')
+        fig.savefig("hover_alt_1m_sim")
+
+    if show_anim:
+        print('Press key to close')
+        plt.waitforbuttonpress()
+        plt.close()
 
 def test_ctrl_mixer():
     cf = CrazyflieDynamics()
@@ -212,7 +231,7 @@ def test_attitude_ctrl(phi_c, theta_c):
     plt.waitforbuttonpress()
     plt.close()
 
-def test_xy(x_c, y_c, z_c, psi_c):
+def test_xy(x_c, y_c, z_c, psi_c, save_plot=False):
     cf = CrazyflieDynamics()
     plot = DataPlotter()
     anim = CrazyflieAnimation()
@@ -223,7 +242,7 @@ def test_xy(x_c, y_c, z_c, psi_c):
     rate_ctrl = RateController()
     ctrl_mixer = ControlMixer()
     altitiude_ctrl = AltitudeController()
-    xy_ctrl = XYController(t=P.t_phys, kp=20.0, ki=2.0, cap=0.1396)
+    xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
     yaw_ctrl = YawController()
 
     # off-borad controller input values
@@ -248,7 +267,7 @@ def test_xy(x_c, y_c, z_c, psi_c):
         t_next_plot = t + P.t_plot
         
         while t < t_next_plot: # offboard controller is slowest at 30 hz
-            t_next_phys = t + P.t_phys
+            t_next_ob = t + P.t_ob
             
             # Altitude off-board controller update
             u_ob[3,0] = altitiude_ctrl.update(r.item(2), cf.state.item(2))
@@ -262,7 +281,7 @@ def test_xy(x_c, y_c, z_c, psi_c):
                 # cf.state.item(3)
                 )
 
-            while t < t_next_phys: # attitude controller runs at 250 hz
+            while t < t_next_ob: # attitude controller runs at 250 hz
                 t_next_att = t + P.t_att
 
                 # Conduct attitude control
@@ -279,6 +298,8 @@ def test_xy(x_c, y_c, z_c, psi_c):
                     u = ctrl_mixer.update(u_ob.item(3), del_phi, del_theta, del_psi)
                     y = cf.update(u)
 
+
+
         plot.update(t, r, cf.state, u)
         anim.update(cf.state)
         plt.pause(0.01)
@@ -287,18 +308,20 @@ def test_xy(x_c, y_c, z_c, psi_c):
     plt.waitforbuttonpress()
     plt.close()
 
-def test_all(x_c, y_c, z_c, psi_c):
+def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
     cf = CrazyflieDynamics()
-    plot = DataPlotter()
-    anim = CrazyflieAnimation()
+
+    if show_anim:
+        plot = DataPlotter()
+        anim = CrazyflieAnimation()
 
     # Create class objects
     rate_ctrl = RateController()
-    attitude_ctrl = AttitudeController()
+    attitude_ctrl = AttitudeController(t=P.t_att, kp=3.5, ki=2.0, kd=1.0)
     rate_ctrl = RateController()
     ctrl_mixer = ControlMixer()
     altitiude_ctrl = AltitudeController()
-    xy_ctrl = XYController()
+    xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
     yaw_ctrl = YawController()
 
     # off-borad controller input values
@@ -319,6 +342,16 @@ def test_all(x_c, y_c, z_c, psi_c):
 
     t = P.t_start
 
+    if save_plot:
+        fig, ax = plt.subplots()
+        ax.set_title("CF Altitude Simulation")
+        ax.set_xlabel("time [s]")
+        ax.set_ylabel("z [m]")
+        ax.grid()
+        x_list = []
+        y_list = []
+        ref_list = []
+
     while t < P.t_end: # plotter can run the slowest
         t_next_plot = t + P.t_plot
         
@@ -333,9 +366,9 @@ def test_all(x_c, y_c, z_c, psi_c):
             u_ob[0,0], u_ob[1,0] = xy_ctrl.update(r.item(0), cf.state.item(0), \
                 # y_c    , y
                 r.item(1), cf.state.item(1), \
-                0.0, # Yaw
+                0.0) # Yaw
                 # cf.state.item(3), \ # Should use yaw from state of cf
-                P.t_ob)
+                # P.t_ob)
 
             while t < t_next_ob: # attitude controller runs at 250 hz
                 t_next_att = t + P.t_att
@@ -354,17 +387,28 @@ def test_all(x_c, y_c, z_c, psi_c):
                     u = ctrl_mixer.update(u_ob.item(3), del_phi, del_theta, del_psi)
                     y = cf.update(u)
                     
+                    if save_plot:
+                        x_list.append(t)
+                        y_list.append(cf.state.item(2))
+                        ref_list.append(r.item(2))
 
-        plot.update(t, r, cf.state, u)
-        anim.update(cf.state)
-        plt.pause(0.01)
-    
-    print('Press key to close')
-    plt.waitforbuttonpress()
-    plt.close()
+        if show_anim:
+            plot.update(t, r, cf.state, u)
+            anim.update(cf.state)
+            plt.pause(0.0000001)
+
+    if save_plot:
+        ax.plot(x_list, y_list, c='r')
+        ax.plot(x_list, ref_list, c='b')
+        fig.savefig("../plots/hover_alt_1m_sim")
+
+    if show_anim:
+        print('Press key to close')
+        plt.waitforbuttonpress()
+        plt.close()
 
 if __name__ == "__main__":
-    # test_altitude(1.0) # works! 2/16/2020
+    # test_altitude(z_c=1.0, show_anim=True, save_plot=False) # works! 2/16/2020
 
     # test_ctrl_mixer()
     # test_rate_ctrl()
@@ -374,6 +418,6 @@ if __name__ == "__main__":
     # test_attitude_ctrl(phi_c, theta_c)
 
     # Fly to x reference value
-    test_xy(1.0, 1.0, 0.0, 0.0) # Works! 3/2/2020
+    # test_xy(1.0, 1.0, 0.0, 0.0) # Works! 3/2/2020
 
-    # test_all(1.0, 1.0, 0.0, 0.0)
+    test_all(0.0, 0.0, 1.0, 0.0, show_anim=False, save_plot=True)

@@ -44,7 +44,7 @@ class RateController:
 
 class AttitudeController:
     # TODO: integrator makes unstable
-    def __init__(self, t, kp=10.0, ki=0.0, kd=0.0, cap=100.0):
+    def __init__(self, t, kp=3.5, ki=2.0, kd=0.0, cap=100.0):
         self.kp_phi = kp      # Roll Attitude Proportional Gain
         self.ki_phi = ki      # Roll Attitude Integral Gain
         self.kd_phi = kd
@@ -73,7 +73,11 @@ class AttitudeController:
         
         e_theta = theta_c - state.item(4)
         self.e_theta_hist += (e_theta * self.t_att)
-        q_c = (self.kp_theta * e_theta) + (self.ki_theta * self.e_theta_hist)
+        e_theta_der = (e_theta - self.e_theta_prev) / self.t_att
+        self.e_theta_prev = e_theta
+
+        q_c = (self.kp_theta * e_theta) + (self.ki_theta * self.e_theta_hist) +\
+            (self.kd_theta * e_theta_der)
 
         if np.abs(q_c) > self.cap:
             q_c = self.cap * (np.sign(q_c))
@@ -117,15 +121,15 @@ class AltitudeController:
         self.e_prev = e
         # print("error: {}, der error: {}, hist error {}".format((e * self.kp), (e_der * self.kd), (self.e_hist * self.ki)))
         del_omega_cap = (self.kp * e) + (self.ki * self.e_hist) + (self.kd * e_der)
-        # del_omega_cap = self.saturate(del_omega_cap)
+        del_omega_cap = self.saturate(del_omega_cap)
         return del_omega_cap
     
     def saturate(self, del_omega_cap):
         # using 10000 - 60000 PWM as per crazyflie_ros linear.z msg
-        if del_omega_cap > 60000:
-            del_omega_cap = 60000
-        elif del_omega_cap < 10000:
-            del_omega_cap = 10000
+        if del_omega_cap > 20000:
+            del_omega_cap = 20000
+        elif del_omega_cap < -15000:
+            del_omega_cap = -15000
         return del_omega_cap
 
 class XYController:

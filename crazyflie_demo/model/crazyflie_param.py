@@ -29,7 +29,7 @@ p0 = 0.0     # Body frame roll angular velocity [rad/s]
 
 # Simulation Parameters
 t_start = 0.0 # [s]
-t_end = 50.0  # [s]
+t_end = 10.0  # [s]
 Ts = 0.01     # [s]
 
 freq_rate_ctrl = 500.0
@@ -44,7 +44,8 @@ t_ob = 1/freq_off_board
 freq_phys = 30.0
 t_phys = 1/freq_phys
 
-t_plot = 0.05  # [s]
+freq_plot = 10.0
+t_plot = 1/freq_plot
 
 # Prop RPM saturation limits
 rpm_max = 21666.4
