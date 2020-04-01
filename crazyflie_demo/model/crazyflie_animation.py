@@ -66,9 +66,9 @@ class CrazyflieAnimation:
 
         # Plot the drone
         ax = plt.axes(projection='3d')
-        ax.set_xlim(-1.0, 1.0)
-        ax.set_ylim(-1.0, 1.0)
-        ax.set_zlim( 0.0, 2.0)
+        ax.set_xlim(-1.2, 1.2)
+        ax.set_ylim(-1.2, 1.2)
+        ax.set_zlim(-0.5, 1.5)
         ax.set_xlabel('X axis')
         ax.set_ylabel('Y axis')
         ax.set_zlabel('Z axis')

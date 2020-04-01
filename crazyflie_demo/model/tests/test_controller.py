@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 # Import crazyflie model modules
 import sys
 sys.path.append("../")
-# sys.path.append("../crazyflie_demo")
 from data_plotter import DataPlotter
 from crazyflie_dynamics import CrazyflieDynamics
 from crazyflie_controller import RateController, AttitudeController, ControlMixer, AltitudeController, XYController, YawController
@@ -96,6 +95,7 @@ def test_ctrl_mixer():
 
     t = P.t_start
 
+    thrust = 0.0
     del_phi = 0.0 # move in neg y
     del_theta = 0.1 # move in pos x
     del_psi = 0.0 # move in pos yaw
@@ -185,7 +185,7 @@ def test_attitude_ctrl(phi_c, theta_c):
 
     ctrl_mixer = ControlMixer()
     rate_ctrl = RateController()
-    attitude_ctrl = AttitudeController()
+    attitude_ctrl = AttitudeController(P.t_att)
 
     t = P.t_start
     
@@ -234,7 +234,8 @@ def test_attitude_ctrl(phi_c, theta_c):
 def test_xy(x_c, y_c, z_c, psi_c, save_plot=False):
     cf = CrazyflieDynamics()
     plot = DataPlotter()
-    anim = CrazyflieAnimation()
+    traj = np.array([x_c, y_c, z_c])
+    anim = CrazyflieAnimation(traj)
 
     # Create class objects
     rate_ctrl = RateController()
@@ -409,16 +410,17 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
         plt.close()
 
 if __name__ == "__main__":
+    # Fly to z reference points
     # test_altitude(z_c=1.0, show_anim=True, save_plot=False) # works! 2/16/2020
 
+    # Test onboard controllers
     # test_ctrl_mixer()
     # test_rate_ctrl()
-
-    # assuming in radians now only valid at .1396 rad = 8 deg
-    # phi_c = 0.0; theta_c = 0.1396 # rads or deg?
+    # phi_c = 0.0; theta_c = 0.1396
     # test_attitude_ctrl(phi_c, theta_c)
 
-    # Fly to x reference value
+    # Fly to x/y reference points
     # test_xy(1.0, 1.0, 0.0, 0.0) # Works! 3/2/2020
 
-    test_all(0.0, 0.5, 1.5, 0.0, show_anim=True, save_plot=False)
+    # Fly to simultaneous x, y, and x setpoints
+    test_all(0.0, 1.0, 1.0, 0.0, show_anim=True, save_plot=False) # works! 04/01/2020
