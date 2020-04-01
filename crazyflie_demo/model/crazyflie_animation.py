@@ -1,99 +1,89 @@
-# from mpl_toolkits.mplot3d import Axes3D
-# from matplotlib.colors import cnames
-# import matplotlib.pyplot as plt
-# import matplotlib.animation as animation
-# import numpy as np
-# import sys
-
-# class crazyflie_animation:
-#     """
-#     Create CF animation
-#     """
-#     def __init__(self):
-#         self.flag_init = True
-#         self.fig, self.ax = plt.subplots()
-#         self.handle = []
-
-#         # plt.axis([-3*])
-    
-#     def update(self, u):
-
-"""
-author: Peter Huang
-email: hbd730@gmail.com
-license: BSD
-Please feel free to use and modify this, but keep the above information. Thanks!
-"""
-
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D, art3d
 from matplotlib.colors import cnames
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import sys
 
-history = np.zeros((500,3))
-count = 0
+from crazyflie_dynamics import CrazyflieDynamics
+import crazyflie_param as P
 
-def plot_quad_3d(waypoints, get_world_frame):
+class CrazyflieAnimation:
     """
-    get_world_frame is a function which return the "next" world frame to be drawn
+    Create CF animation
     """
-    fig = plt.figure()
-    ax = fig.add_axes([0, 0, 1, 1], projection='3d')
-    ax.plot([], [], [], '-', c='cyan')[0]
-    ax.plot([], [], [], '-', c='red')[0]
-    ax.plot([], [], [], '-', c='blue', marker='o', markevery=2)[0]
-    ax.plot([], [], [], '.', c='red', markersize=4)[0]
-    ax.plot([], [], [], '.', c='blue', markersize=2)[0]
-    set_limit((-0.5,0.5), (-0.5,0.5), (-0.5,8))
-    plot_waypoints(waypoints)
-    an = animation.FuncAnimation(fig,
-                                 anim_callback,
-                                 fargs=(get_world_frame,),
-                                 init_func=None,
-                                 frames=400, interval=10, blit=False)
+    def __init__(self, traj):
+        self.flag_init = True
+        self.fig, self.ax = plt.subplots()
+        self.handle = []
+        self.traj = traj
+        self.x_list = []
+        self.y_list = []
+        self.z_list = []
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'save':
-        print "saving"
-        an.save('sim.gif', dpi=80, writer='imagemagick', fps=60)
-    else:
-        plt.show()
+        # Length of leg
+        self.d = P.d
+    
+    def update(self, state):
+        x = state.item(0); y = state.item(1); z = state.item(2)
+        phi = state.item(5); theta = state.item(4); psi = state.item(3)
+        self.drawCrazyflie(x, y, z, phi, theta, psi)
 
-def plot_waypoints(waypoints):
-    ax = plt.gca()
-    lines = ax.get_lines()
-    lines[-2].set_data(waypoints[:,0], waypoints[:,1])
-    lines[-2].set_3d_properties(waypoints[:,2])
+        if self.flag_init == True:
+            self.flag_init = False
 
-def set_limit(x, y, z):
-    ax = plt.gca()
-    ax.set_xlim(x)
-    ax.set_ylim(y)
-    ax.set_zlim(z)
 
-def anim_callback(i, get_world_frame):
-    frame = get_world_frame(i)
-    set_frame(frame)
+    def drawCrazyflie(self, x, y, z, phi, theta, psi):
+        """
+        Plot a simple animation of the crazyflie
+        """
+        # TODO: Find out why the sign convention is reversed for these - is in the rot matrix formulation?
+        phi = -phi; theta = -theta; psi = -psi 
+        cf_x = [-self.d/np.sqrt(2), self.d/2, self.d/np.sqrt(2),  self.d/np.sqrt(2), -self.d/np.sqrt(2), 0.0]
+        cf_y = [ self.d/np.sqrt(2), 0.0,      self.d/np.sqrt(2), -self.d/np.sqrt(2), -self.d/np.sqrt(2), 0.0]
+        cf_z = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        pts = np.vstack((cf_x, cf_y, cf_z))
 
-def set_frame(frame):
-    # convert 3x6 world_frame matrix into three line_data objects which is 3x2 (row:point index, column:x,y,z)
-    lines_data = [frame[:,[0,2]], frame[:,[1,3]], frame[:,[4,5]]]
-    ax = plt.gca()
-    lines = ax.get_lines()
-    for line, line_data in zip(lines[:3], lines_data):
-        x, y, z = line_data
-        line.set_data(x, y)
-        line.set_3d_properties(z)
+        # Rotation matrix following canada paper convention
+        R = np.matrix([
+            [np.cos(theta)*np.cos(psi), \
+                np.cos(theta)*np.sin(psi), \
+                -np.sin(theta)],
+            [np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi), \
+                np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(theta)*np.cos(psi), \
+                np.sin(phi)*np.cos(theta)],
+            [np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi), \
+                np.cos(phi)*np.sin(theta)*np.sin(psi) - np.sin(phi)*np.cos(psi), \
+                np.cos(phi)*np.cos(theta)]
+        ])
+        # rotate the drawing by the rotation matrix
+        pts = R*pts
+        # translate the drawing
+        pts[0] += x; pts[1] += y; pts[2] += z
 
-    global history, count
-    # plot history trajectory
-    history[count] = frame[:,4]
-    if count < np.size(history, 0) - 1:
-        count += 1
-    zline = history[:count,-1]
-    xline = history[:count,0]
-    yline = history[:count,1]
-    lines[-1].set_data(xline, yline)
-    lines[-1].set_3d_properties(zline)
-    # ax.plot3D(xline, yline, zline, 'blue')
+        # append the historical cartesian positions
+        self.x_list.append(x); self.y_list.append(y); self.z_list.append(z)
+
+        # Plot the drone
+        ax = plt.axes(projection='3d')
+        ax.set_xlim(-1.2, 1.2)
+        ax.set_ylim(-1.2, 1.2)
+        ax.set_zlim(-0.5, 1.5)
+        ax.set_xlabel('X axis')
+        ax.set_ylabel('Y axis')
+        ax.set_zlabel('Z axis')
+        ax.scatter(pts[0], pts[1], pts[2], s=1, c='k')
+
+        # Plot the drone trail
+        ax.plot(self.x_list, self.y_list, self.z_list, c='r')
+
+        # Plot hover setpoint
+        ax.scatter(self.traj[0], self.traj[1], self.traj[2], s=10, c='b', marker='x')
+
+if __name__ == "__main__":
+    cf = CrazyflieDynamics()
+    crazyflieAnimation = CrazyflieAnimation()
+
+    # Test some static frames
+    crazyflieAnimation.drawCrazyflie(x= 0.0, y=0.5, z=0.5, phi=0.0, theta=0.0, psi=1.0)
+    plt.show()

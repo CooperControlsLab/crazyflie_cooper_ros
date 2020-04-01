@@ -44,7 +44,7 @@ class RateController:
 
 class AttitudeController:
     # TODO: integrator makes unstable
-    def __init__(self, kp=10.0, ki=0.0, kd=0.0, cap=100.0):
+    def __init__(self, t, kp=3.5, ki=2.0, kd=0.0, cap=100.0):
         self.kp_phi = kp      # Roll Attitude Proportional Gain
         self.ki_phi = ki      # Roll Attitude Integral Gain
         self.kd_phi = kd
@@ -57,23 +57,27 @@ class AttitudeController:
         self.e_theta_hist = 0.0
         self.e_theta_prev = 0.0
 
-        self.t_phys = 1/30.0
+        self.t_att = t
 
         self.cap = cap
 
     def update(self, phi_c, theta_c, state): # phi controls neg y, theta controls pos x
         # Calculate errors
         e_phi = phi_c - state.item(5)
-        self.e_phi_hist += (e_phi * self.t_phys)
-        e_phi_der = (e_phi - self.e_phi_prev) / self.t_phys
+        self.e_phi_hist += (e_phi * self.t_att)
+        e_phi_der = (e_phi - self.e_phi_prev) / self.t_att
         self.e_phi_prev = e_phi
 
         p_c = (self.kp_phi * e_phi) + (self.ki_phi * self.e_phi_hist) +\
             (self.kd_phi * e_phi_der)
         
         e_theta = theta_c - state.item(4)
-        self.e_theta_hist += (e_theta * self.t_phys)
-        q_c = (self.kp_theta * e_theta) + (self.ki_theta * self.e_theta_hist)
+        self.e_theta_hist += (e_theta * self.t_att)
+        e_theta_der = (e_theta - self.e_theta_prev) / self.t_att
+        self.e_theta_prev = e_theta
+
+        q_c = (self.kp_theta * e_theta) + (self.ki_theta * self.e_theta_hist) +\
+            (self.kd_theta * e_theta_der)
 
         if np.abs(q_c) > self.cap:
             q_c = self.cap * (np.sign(q_c))
@@ -99,8 +103,8 @@ class ControlMixer:
         return u_pwm
 
 class AltitudeController:
-    def __init__(self, kp=20000.0, ki=35.0, kd=11000.0):
-        self.omega_cap_e = 44705 # Feedforward from Eq. 3.1.8
+    def __init__(self, ff=44705, kp=20000.0, ki=35.0, kd=11000.0):
+        self.omega_cap_e = ff # Feedforward from Eq. 3.1.8
         self.kp = kp
         self.ki = ki
         self.e_hist = 0.0
@@ -117,19 +121,19 @@ class AltitudeController:
         self.e_prev = e
         # print("error: {}, der error: {}, hist error {}".format((e * self.kp), (e_der * self.kd), (self.e_hist * self.ki)))
         del_omega_cap = (self.kp * e) + (self.ki * self.e_hist) + (self.kd * e_der)
-        # del_omega_cap = self.saturate(del_omega_cap)
+        del_omega_cap = self.saturate(del_omega_cap)
         return del_omega_cap
     
     def saturate(self, del_omega_cap):
         # using 10000 - 60000 PWM as per crazyflie_ros linear.z msg
-        if del_omega_cap > 60000:
-            del_omega_cap = 60000
-        elif del_omega_cap < 10000:
-            del_omega_cap = 10000
+        if del_omega_cap > 20000:
+            del_omega_cap = 20000
+        elif del_omega_cap < -15000:
+            del_omega_cap = -15000
         return del_omega_cap
 
 class XYController:
-    def __init__(self, kp=20.0, ki=2.0, cap=0.2):
+    def __init__(self, t, kp=30.0, ki=2.0, cap=0.2):
         self.kp = kp
         self.ki = ki
         self.cap = cap
@@ -137,24 +141,25 @@ class XYController:
         self.y_b_prev = 0.0
         self.xe_b_hist = 0.0
         self.ye_b_hist = 0.0
+        self.t_ob = t
     
-    def update(self, x_c, x, y_c, y, psi, t):
+    def update(self, x_c, x, y_c, y, psi):
         xe = x_c - x; ye = y_c - y # Get position error
         # print('xe {}\nye {}'.format(xe, ye))
 
         x_b = x * np.cos(psi) + y * np.sin(psi) # Get x in body frame
-        u = (x_b - self.x_b_prev) / t # u is x-vel in body frame
+        u = (x_b - self.x_b_prev) / self.t_ob # u is x-vel in body frame
         self.x_b_prev = x_b # Reset previous val
 
         y_b = -(x * np.sin(psi)) + y * np.cos(psi) # Get y in body frame
-        v = (y_b - self.y_b_prev) / t # v is y-vel in body frame
+        v = (y_b - self.y_b_prev) / self.t_ob # v is y-vel in body frame
         self.y_b_prev = y_b # Reset previous val
 
         xe_b = xe * np.cos(psi) + ye * np.sin(psi) # Get errors in body frame
         ye_b = -(xe * np.sin(psi)) + ye * np.cos(psi)
 
-        self.xe_b_hist += ((xe_b - u) * t) # Accumulate and store histroical error
-        self.ye_b_hist += ((ye_b - v) * t)
+        self.xe_b_hist += ((xe_b - u) * self.t_ob) # Accumulate and store histroical error
+        self.ye_b_hist += ((ye_b - v) * self.t_ob)
 
         phi_c   = ((xe_b - u) * ( self.kp)) + (self.xe_b_hist * ( self.ki)) # Eq. 3.1.11 and Eq. 3.1.12
         theta_c = ((ye_b - v) * (-self.kp)) + (self.ye_b_hist * (-self.ki))
@@ -188,3 +193,99 @@ class YawController:
         psi_e = psi_c - psi
         psi_e_tot = self.kp * psi_e
         return psi_e_tot
+
+class XYTrajController:
+    def __init__(self, kp=100.0, kd=100.0, k_ff=10.0, cap=20.0):
+        self.kp = kp
+        self.kd = kd # adding damping
+        self.k_ff = k_ff
+        self.cap = cap
+
+        self.r_prev = np.array([0.0, 0.0])
+
+        self.t_phys = 1 / 30.0
+        self.g = 9.80665
+
+        self.time_now = 0.0
+        self.time_list = []
+        self.x_list = []
+        self.x_t_list = []
+        self.y_list = []
+        self.y_t_list = []
+        self.xd_list = []
+        self.yd_list = []
+        self.xd_t_list = []
+        self.yd_t_list = []
+    
+    def normalize(self, a):
+        """
+        Return the normal unit vector.
+        param a: vector ([float])
+        """
+        normal = np.empty_like(a)
+        normal[0] = -a[1]
+        normal[1] = a[0]
+        normal = normal / np.linalg.norm(normal)
+        return normal
+
+    def update(self, r_t, rd_t, r_t_vect, r, yaw_c, rdd_t, is_pickling=False):
+        """
+        Off-Board trajectory PID controller
+        Parameters
+        ----------
+        r_t      = traj pos
+        rd_t     = traj vel
+        r_t_vect = vector from current to next traj point
+        r        = actual drone pos
+        yaw_c    = yaw setpoint
+        rdd_t    = pre-computed feedforward
+        is_pickling = save out data into 'cf_data' file
+        Returns
+        -------
+        theta_c = commanded pitch angle which results in pos x movement
+        phi_c   = commanded roll angle which results in neg y movement
+        """
+        # Calculate unit vectors used tabulate components of error
+        t_unit = r_t_vect / np.linalg.norm(r_t_vect)
+        n_unit = self.normalize(t_unit)
+
+        # Calculate all position error
+        e_p = r_t - r
+
+        # Calculate velocity error component
+        rd = (r - self.r_prev) / self.t_phys
+        self.r_prev = r
+        e_v = rd_t - rd
+
+        # Save out data if desired
+        if is_pickling:
+            self.time_now += self.t_phys
+            self.time_list.append(self.time_now)
+            self.x_list.append(r[0])
+            self.x_t_list.append(r_t[0])
+
+            self.xd_list.append(rd[0])
+            self.xd_t_list.append(rd_t[0])
+
+            self.y_list.append(r[1])
+            self.y_t_list.append(r_t[1])
+            
+            self.yd_list.append(rd[1])
+            self.yd_t_list.append(rd_t[1])
+        
+        rdd_t = self.kp * e_p + self.kd * e_v \
+            # + self.k_ff * rdd_t # optional feedforward component
+        # print("total rdd_t {}".format(rdd_t))
+
+        theta_c = 1.0/self.g * (rdd_t[0] * np.sin(yaw_c) - \
+            rdd_t[1] * np.cos(yaw_c)) # equivalent to movement in -y direction
+        phi_c   = 1.0/self.g * (rdd_t[0] * np.cos(yaw_c) + \
+            rdd_t[1] * np.sin(yaw_c)) # equivalent to movement in +x direction
+
+        # Cap roll (y) and pitch (x) to prevent unstable maneuvers
+        if np.abs(phi_c) >= self.cap:
+            phi_c =  np.sign(phi_c) * self.cap
+        if np.abs(theta_c) >= self.cap:
+            theta_c = np.sign(theta_c) * self.cap
+
+        return phi_c, theta_c
