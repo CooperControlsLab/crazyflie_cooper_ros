@@ -103,8 +103,8 @@ class ControlMixer:
         return u_pwm
 
 class AltitudeController:
-    def __init__(self, kp=20000.0, ki=35.0, kd=11000.0):
-        self.omega_cap_e = 44705 # Feedforward from Eq. 3.1.8
+    def __init__(self, ff=44705, kp=20000.0, ki=35.0, kd=11000.0):
+        self.omega_cap_e = ff # Feedforward from Eq. 3.1.8
         self.kp = kp
         self.ki = ki
         self.e_hist = 0.0
@@ -193,3 +193,99 @@ class YawController:
         psi_e = psi_c - psi
         psi_e_tot = self.kp * psi_e
         return psi_e_tot
+
+class XYTrajController:
+    def __init__(self, kp=100.0, kd=100.0, k_ff=10.0, cap=20.0):
+        self.kp = kp
+        self.kd = kd # adding damping
+        self.k_ff = k_ff
+        self.cap = cap
+
+        self.r_prev = np.array([0.0, 0.0])
+
+        self.t_phys = 1 / 30.0
+        self.g = 9.80665
+
+        self.time_now = 0.0
+        self.time_list = []
+        self.x_list = []
+        self.x_t_list = []
+        self.y_list = []
+        self.y_t_list = []
+        self.xd_list = []
+        self.yd_list = []
+        self.xd_t_list = []
+        self.yd_t_list = []
+    
+    def normalize(self, a):
+        """
+        Return the normal unit vector.
+        param a: vector ([float])
+        """
+        normal = np.empty_like(a)
+        normal[0] = -a[1]
+        normal[1] = a[0]
+        normal = normal / np.linalg.norm(normal)
+        return normal
+
+    def update(self, r_t, rd_t, r_t_vect, r, yaw_c, rdd_t, is_pickling=False):
+        """
+        Off-Board trajectory PID controller
+        Parameters
+        ----------
+        r_t      = traj pos
+        rd_t     = traj vel
+        r_t_vect = vector from current to next traj point
+        r        = actual drone pos
+        yaw_c    = yaw setpoint
+        rdd_t    = pre-computed feedforward
+        is_pickling = save out data into 'cf_data' file
+        Returns
+        -------
+        theta_c = commanded pitch angle which results in pos x movement
+        phi_c   = commanded roll angle which results in neg y movement
+        """
+        # Calculate unit vectors used tabulate components of error
+        t_unit = r_t_vect / np.linalg.norm(r_t_vect)
+        n_unit = self.normalize(t_unit)
+
+        # Calculate all position error
+        e_p = r_t - r
+
+        # Calculate velocity error component
+        rd = (r - self.r_prev) / self.t_phys
+        self.r_prev = r
+        e_v = rd_t - rd
+
+        # Save out data if desired
+        if is_pickling:
+            self.time_now += self.t_phys
+            self.time_list.append(self.time_now)
+            self.x_list.append(r[0])
+            self.x_t_list.append(r_t[0])
+
+            self.xd_list.append(rd[0])
+            self.xd_t_list.append(rd_t[0])
+
+            self.y_list.append(r[1])
+            self.y_t_list.append(r_t[1])
+            
+            self.yd_list.append(rd[1])
+            self.yd_t_list.append(rd_t[1])
+        
+        rdd_t = self.kp * e_p + self.kd * e_v \
+            # + self.k_ff * rdd_t # optional feedforward component
+        # print("total rdd_t {}".format(rdd_t))
+
+        theta_c = 1.0/self.g * (rdd_t[0] * np.sin(yaw_c) - \
+            rdd_t[1] * np.cos(yaw_c)) # equivalent to movement in -y direction
+        phi_c   = 1.0/self.g * (rdd_t[0] * np.cos(yaw_c) + \
+            rdd_t[1] * np.sin(yaw_c)) # equivalent to movement in +x direction
+
+        # Cap roll (y) and pitch (x) to prevent unstable maneuvers
+        if np.abs(phi_c) >= self.cap:
+            phi_c =  np.sign(phi_c) * self.cap
+        if np.abs(theta_c) >= self.cap:
+            theta_c = np.sign(theta_c) * self.cap
+
+        return phi_c, theta_c

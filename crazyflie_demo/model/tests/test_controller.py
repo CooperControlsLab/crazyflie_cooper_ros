@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 # Import crazyflie model modules
 import sys
 sys.path.append("../")
-sys.path.append("../crazyflie_demo")
+# sys.path.append("../crazyflie_demo")
 from data_plotter import DataPlotter
 from crazyflie_dynamics import CrazyflieDynamics
 from crazyflie_controller import RateController, AttitudeController, ControlMixer, AltitudeController, XYController, YawController
@@ -241,7 +241,7 @@ def test_xy(x_c, y_c, z_c, psi_c, save_plot=False):
     attitude_ctrl = AttitudeController(t=P.t_att, kp=3.5, ki=2.0, kd=1.0)
     rate_ctrl = RateController()
     ctrl_mixer = ControlMixer()
-    altitiude_ctrl = AltitudeController()
+    altitiude_ctrl = AltitudeController(ff=41000.0)
     xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
     yaw_ctrl = YawController()
 
@@ -313,13 +313,14 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
 
     if show_anim:
         plot = DataPlotter()
-        anim = CrazyflieAnimation()
+        traj = np.array([x_c, y_c, z_c])
+        anim = CrazyflieAnimation(traj)
 
     # Create class objects
     rate_ctrl = RateController()
     attitude_ctrl = AttitudeController(t=P.t_att, kp=3.5, ki=2.0, kd=1.0)
-    rate_ctrl = RateController()
     ctrl_mixer = ControlMixer()
+    # altitiude_ctrl = AltitudeController(ff=41000.0, kp=11000.0, ki=3500.0, kd=9000.0) # Phys values
     altitiude_ctrl = AltitudeController()
     xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
     yaw_ctrl = YawController()
@@ -420,4 +421,4 @@ if __name__ == "__main__":
     # Fly to x reference value
     # test_xy(1.0, 1.0, 0.0, 0.0) # Works! 3/2/2020
 
-    test_all(0.0, 0.0, 1.0, 0.0, show_anim=False, save_plot=True)
+    test_all(0.0, 0.5, 1.5, 0.0, show_anim=True, save_plot=False)

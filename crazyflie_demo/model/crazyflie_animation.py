@@ -12,10 +12,14 @@ class CrazyflieAnimation:
     """
     Create CF animation
     """
-    def __init__(self):
+    def __init__(self, traj):
         self.flag_init = True
         self.fig, self.ax = plt.subplots()
         self.handle = []
+        self.traj = traj
+        self.x_list = []
+        self.y_list = []
+        self.z_list = []
 
         # Length of leg
         self.d = P.d
@@ -57,15 +61,24 @@ class CrazyflieAnimation:
         # translate the drawing
         pts[0] += x; pts[1] += y; pts[2] += z
 
-        # Plot the drawing
+        # append the historical cartesian positions
+        self.x_list.append(x); self.y_list.append(y); self.z_list.append(z)
+
+        # Plot the drone
         ax = plt.axes(projection='3d')
         ax.set_xlim(-1.0, 1.0)
         ax.set_ylim(-1.0, 1.0)
-        ax.set_zlim(-1.0, 1.0)
+        ax.set_zlim( 0.0, 2.0)
         ax.set_xlabel('X axis')
         ax.set_ylabel('Y axis')
         ax.set_zlabel('Z axis')
         ax.scatter(pts[0], pts[1], pts[2], s=1, c='k')
+
+        # Plot the drone trail
+        ax.plot(self.x_list, self.y_list, self.z_list, c='r')
+
+        # Plot hover setpoint
+        ax.scatter(self.traj[0], self.traj[1], self.traj[2], s=10, c='b', marker='x')
 
 if __name__ == "__main__":
     cf = CrazyflieDynamics()
