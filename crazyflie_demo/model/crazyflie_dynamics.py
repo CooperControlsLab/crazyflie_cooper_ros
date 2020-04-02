@@ -2,12 +2,12 @@ import numpy as np
 import crazyflie_param as P
 
 class CrazyflieDynamics:
-    def __init__(self):
+    def __init__(self, init_pos=np.array([0.0, 0.0, 0.0])):
         # Initial state conditions
         self.state = np.array([
-            [P.x0],     # 0
-            [P.y0],     # 1
-            [P.z0],     # 2
+            [init_pos[0]],     # 0
+            [init_pos[1]],     # 1
+            [init_pos[2]],     # 2
             [P.psi0],   # 3
             [P.theta0], # 4
             [P.phi0],   # 5
@@ -18,6 +18,7 @@ class CrazyflieDynamics:
             [P.q0],     # 10
             [P.p0],     # 11
         ])
+        # self.state[0] = init_pos[0]; self.state[1] = init_pos[1]; self.state[2] = init_pos[2]
         # Time stept_phys
         self.Ts = P.Ts
         # Crazyflie 2.0 mass

@@ -12,12 +12,13 @@ from crazyflie_controller import RateController, AttitudeController, ControlMixe
 import crazyflie_param as P
 from crazyflie_animation import CrazyflieAnimation
 
-def test_traj(traj, init_pos, show_anim=True, save_plot=False):
-    cf = CrazyflieDynamics()
+def test_traj(traj, show_anim=True, save_plot=False):
+    init_pos = np.array([traj[0][0], traj[0][2], traj[0][5]])
+    cf = CrazyflieDynamics(init_pos=init_pos)
 
     if show_anim:
         plot = DataPlotter()
-        anim = CrazyflieAnimation(traj, init_pos=traj[0])
+        anim = CrazyflieAnimation(traj)
 
     # Create class objects
     rate_ctrl = RateController()

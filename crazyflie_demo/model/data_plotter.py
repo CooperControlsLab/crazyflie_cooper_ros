@@ -92,7 +92,7 @@ class MyPlot:
         """
         self.legend = legend
         self.ax = ax
-        self.colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        self.colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
         self.line_styles = ['-', '-', '--', '-.', ':']
 
         self.line = []

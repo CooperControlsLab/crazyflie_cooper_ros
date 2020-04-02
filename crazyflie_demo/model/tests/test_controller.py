@@ -310,7 +310,8 @@ def test_xy(x_c, y_c, z_c, psi_c, save_plot=False):
     plt.close()
 
 def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
-    cf = CrazyflieDynamics()
+    cf = CrazyflieDynamics(init_pos=np.array([0.0, 0.0, 0.0]))
+    # cf = CrazyflieDynamics()
 
     if show_anim:
         plot = DataPlotter()
@@ -318,20 +319,21 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
         anim = CrazyflieAnimation(traj)
 
     # Create class objects
-    rate_ctrl = RateController()
-    attitude_ctrl = AttitudeController(t=P.t_att, kp=3.5, ki=2.0, kd=1.0)
+    rate_ctrl = RateController(kp_p=70.0, \
+        kp_q=70.0, kp_r=20.0, ki_r=10.0)
+    attitude_ctrl = AttitudeController(kp=3.5, ki=2.0, kd=1.0)
     ctrl_mixer = ControlMixer()
     # altitiude_ctrl = AltitudeController(ff=41000.0, kp=11000.0, ki=3500.0, kd=9000.0) # Phys values
     altitiude_ctrl = AltitudeController()
-    xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
-    yaw_ctrl = YawController()
+    xy_ctrl = XYController(kp=30.0, ki=2.0, cap=0.1396)
+    yaw_ctrl = YawController(kp=3.0, cap=3.49)
 
     # off-borad controller input values
     u_ob = np.array([
         [0.0], # pitch (phi -> x)  - 0
         [0.0], # roll (theta -> y) - 1
-        [0.0], # yaw rate          - 2
-        [0.0], # thrust            - 3
+        [0.0], # thrust            - 2
+        [0.0], # yaw rate          - 3
     ])
 
     # reference values
@@ -361,16 +363,15 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
             t_next_ob = t + P.t_ob
             
             # Altitude off-board controller update
-            u_ob[3,0] = altitiude_ctrl.update(r.item(2), cf.state.item(2))
+            u_ob[2,0] = altitiude_ctrl.update(r.item(2), cf.state.item(2))
 
             # XY off-borad controller update
             # phi_c  , theta_c                    x_c      , x
             u_ob[0,0], u_ob[1,0] = xy_ctrl.update(r.item(0), cf.state.item(0), \
-                # y_c    , y
-                r.item(1), cf.state.item(1), \
-                0.0) # Yaw
-                # cf.state.item(3), \ # Should use yaw from state of cf
-                # P.t_ob)
+                # y_c    , y               , psi
+                r.item(1), cf.state.item(1), cf.state.item(3))
+            
+            u_ob[3,0] = yaw_ctrl.update(r.item(3), cf.state.item(3))
 
             while t < t_next_ob: # attitude controller runs at 250 hz
                 t_next_att = t + P.t_att
@@ -383,17 +384,32 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                     t = t + P.t_rate
 
                     # Conduct rate control
-                    del_phi, del_theta, del_psi = rate_ctrl.update(p_c, q_c, u_ob.item(2), cf.state)
+                    del_phi, del_theta, del_psi = rate_ctrl.update(p_c, q_c, u_ob.item(3), cf.state)
                     
                     # Update state of model
-                    u = ctrl_mixer.update(u_ob.item(3), del_phi, del_theta, del_psi)
+                    u = ctrl_mixer.update(u_ob.item(2), del_phi, del_theta, del_psi)
                     y = cf.update(u)
                     
                     if save_plot:
                         x_list.append(t)
                         y_list.append(cf.state.item(2))
                         ref_list.append(r.item(2))
+                    
+                    # if show_anim:
+                    #     plot.update(t, r, cf.state, u)
+                    #     anim.update(cf.state)
+                    #     plt.pause(0.0000001)
+                
+                # if show_anim:
+                #     plot.update(t, r, cf.state, u)
+                #     anim.update(cf.state)
+                #     plt.pause(0.0000001)
 
+            # if show_anim:
+            #     plot.update(t, r, cf.state, u)
+            #     anim.update(cf.state)
+            #     plt.pause(0.0000001)
+                
         if show_anim:
             plot.update(t, r, cf.state, u)
             anim.update(cf.state)
@@ -410,17 +426,5 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
         plt.close()
 
 if __name__ == "__main__":
-    # Fly to z reference points
-    # test_altitude(z_c=1.0, show_anim=True, save_plot=False) # works! 2/16/2020
-
-    # Test onboard controllers
-    # test_ctrl_mixer()
-    # test_rate_ctrl()
-    # phi_c = 0.0; theta_c = 0.1396
-    # test_attitude_ctrl(phi_c, theta_c)
-
-    # Fly to x/y reference points
-    # test_xy(1.0, 1.0, 0.0, 0.0) # Works! 3/2/2020
-
-    # Fly to simultaneous x, y, and x setpoints
-    test_all(0.0, 1.0, 1.0, 0.0, show_anim=True, save_plot=False) # works! 04/01/2020
+    # Fly to simultaneous x, y, x, and yaw setpoints
+    test_all(1.0, 1.0, 1.0, 0.5, show_anim=True, save_plot=False) # works! 04/02/2020

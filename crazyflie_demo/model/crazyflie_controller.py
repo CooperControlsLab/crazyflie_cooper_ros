@@ -21,7 +21,7 @@ import crazyflie_param as P
 # ])
 
 class RateController:
-    def __init__(self, kp_p=70.0, kp_q=70.0, kp_r=70.0, ki_r=16.7):
+    def __init__(self, t=P.t_rate, kp_p=70.0, kp_q=70.0, kp_r=70.0, ki_r=16.7):
         self.kp_p = kp_p    # Roll Rate Proportional Gain
         
         self.kp_q = kp_q    # Pitch Rate Proportional Gain
@@ -30,13 +30,15 @@ class RateController:
         self.ki_r = ki_r    # psi Rate Integral Gain
         self.e_r_hist = 0.0 # Initialize Historical Error
 
+        self.t = t
+
     def update(self, p_c, q_c, r_c, state):
         del_phi = self.kp_p * (p_c - state.item(11))
         
         del_theta = self.kp_q * (q_c - state.item(10))
 
         e_r = r_c - state.item(9)
-        self.e_r_hist += e_r
+        self.e_r_hist += (e_r * self.t)
         del_psi = self.kp_r * (r_c - state.item(9)) + (self.ki_r * self.e_r_hist)
 
         return del_phi, del_theta, del_psi
@@ -44,7 +46,7 @@ class RateController:
 
 class AttitudeController:
     # TODO: integrator makes unstable
-    def __init__(self, t, kp=3.5, ki=2.0, kd=0.0, cap=100.0):
+    def __init__(self, t=P.t_att, kp=3.5, ki=2.0, kd=0.0, cap=100.0):
         self.kp_phi = kp      # Roll Attitude Proportional Gain
         self.ki_phi = ki      # Roll Attitude Integral Gain
         self.kd_phi = kd
@@ -103,21 +105,22 @@ class ControlMixer:
         return u_pwm
 
 class AltitudeController:
-    def __init__(self, ff=44705, kp=20000.0, ki=35.0, kd=11000.0):
+    def __init__(self, t=P.t_ob, ff=44705, kp=20000.0, ki=35.0, kd=11000.0):
         self.omega_cap_e = ff # Feedforward from Eq. 3.1.8
         self.kp = kp
         self.ki = ki
         self.e_hist = 0.0
         self.kd = kd
         self.e_prev = 0.0
-        self.t_ob = P.t_ob
+
+        self.t = t
 
     def update(self, z_c, z):
         e = z_c - z
         # print("commanded pos is {}, actual pos is {}".format(z_c, z))
-        # self.e_hist += (e * self.t_ob) # historical error
-        self.e_hist += e
-        e_der = (e - self.e_prev) / self.t_ob # dirty derivative error
+        # self.e_hist += (e * self.t) # historical error
+        self.e_hist += (e * self.t)
+        e_der = (e - self.e_prev) / self.t # dirty derivative error
         self.e_prev = e
         # print("error: {}, der error: {}, hist error {}".format((e * self.kp), (e_der * self.kd), (self.e_hist * self.ki)))
         del_omega_cap = (self.kp * e) + (self.ki * self.e_hist) + (self.kd * e_der)
@@ -133,7 +136,7 @@ class AltitudeController:
         return del_omega_cap
 
 class XYController:
-    def __init__(self, t, kp=30.0, ki=2.0, cap=0.2):
+    def __init__(self, t=P.t_ob, kp=30.0, ki=2.0, cap=0.2):
         self.kp = kp
         self.ki = ki
         self.cap = cap
@@ -174,8 +177,9 @@ class XYController:
         return theta_c, phi_c
 
 class YawController:
-    def __init__(self, kp=-20.0):
+    def __init__(self, kp=3.0, cap=3.49):
         self.kp = kp
+        self.cap = cap
     
     def update(self, psi_c, psi):
         """
@@ -188,11 +192,15 @@ class YawController:
 
         Returns
         -------
-        psie_tot = total psi angle error which maps to commanded psi rate
+        r_c = commanded yaw rate
         """
         psi_e = psi_c - psi
-        psi_e_tot = self.kp * psi_e
-        return psi_e_tot
+        r_c = self.kp * psi_e
+
+        if np.abs(r_c) >= self.cap:
+            r_c = np.sign(r_c) * self.cap
+
+        return r_c
 
 class XYTrajController:
     def __init__(self, kp=100.0, kd=100.0, k_ff=10.0, cap=20.0):
