@@ -371,6 +371,7 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                 # y_c    , y               , psi
                 r.item(1), cf.state.item(1), cf.state.item(3))
             
+            # Yaw rate off-board controller update
             u_ob[3,0] = yaw_ctrl.update(r.item(3), cf.state.item(3))
 
             while t < t_next_ob: # attitude controller runs at 250 hz

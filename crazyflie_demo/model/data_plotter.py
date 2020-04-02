@@ -22,9 +22,12 @@ plt.ion()  # enable interactive drawing
 # ])
 
 class DataPlotter:
-    def __init__(self):
+    def __init__(self, is_type="hover"):
         # Number of subplots
-        self.num_rows = 6
+        if is_type == "hover":
+            self.num_rows = 6
+        elif is_type == "traj":
+            self.num_rows = 4
         self.num_cols = 1
 
         # Create figure and axis handles
@@ -32,57 +35,88 @@ class DataPlotter:
 
         # Instatiate lists to hold the time and data histories
         self.time_history = [] # time
-        self.xref_history = [] # reference position x_c
-        self.x_history = [] # position x
-        self.yref_history = [] # reference position y_c
-        self.y_history = [] # position y
-        self.zref_history = [] # reference position z_c
-        self.z_history = [] # position z
-
-        # Added rotational components
-        self.psiref_history = []
-        self.psi_history = []
-        # self.thetaref_history = []
-        self.theta_history = []
-        # self.phiref_history = []
-        self.phi_history = []
-
-        # Create a handle for every subplot
         self.handle = []
-        self.handle.append(MyPlot(self.ax[0], ylabel='x(m)', title='CF Data'))
-        self.handle.append(MyPlot(self.ax[1], ylabel='y(m)'))
-        self.handle.append(MyPlot(self.ax[2], ylabel='z(m)'))
 
-        self.handle.append(MyPlot(self.ax[3], ylabel='psi(deg)'))
-        self.handle.append(MyPlot(self.ax[4], ylabel='theta(deg)'))
-        self.handle.append(MyPlot(self.ax[5], xlabel='t(s)', ylabel='phi(deg)'))
+        if is_type == "hover":
+            self.x_history = [] # position x
+            self.xref_history = [] # reference position x_c
+            self.y_history = [] # position y
+            self.yref_history = [] # reference position y_c    
+            self.z_history = [] # position z
+            self.zref_history = [] # reference position z_c
 
-    def update(self, t, reference, states, ctrl):
+            # Added rotational components
+            self.psiref_history = []
+            self.psi_history = []
+            self.theta_history = []
+            self.phi_history = []
+
+            # Create a handle for every subplot
+            self.handle.append(MyPlot(self.ax[0], ylabel='x(m)', title='CF Sim Data'))
+            self.handle.append(MyPlot(self.ax[1], ylabel='y(m)'))
+            self.handle.append(MyPlot(self.ax[2], ylabel='z(m)'))
+            self.handle.append(MyPlot(self.ax[3], ylabel='psi(deg)'))
+            self.handle.append(MyPlot(self.ax[4], ylabel='theta(deg)'))
+            self.handle.append(MyPlot(self.ax[5], xlabel='t(s)', ylabel='phi(deg)'))
+
+        elif is_type == "traj":
+            self.x_history = [] # position x
+            self.xref_history = [] # reference position x_c
+            self.xd_history = []
+            self.xdref_history = []
+
+            self.y_history = [] # position y
+            self.yref_history = [] # reference position y_c  
+            self.yd_history = []
+            self.ydref_history = []
+
+            # Create a handle for every subplot
+            self.handle.append(MyPlot(self.ax[0], ylabel='x(m)', title='CF Sim Data'))
+            self.handle.append(MyPlot(self.ax[1], ylabel='y(m)'))
+            self.handle.append(MyPlot(self.ax[2], ylabel='xd(m/s)'))
+            self.handle.append(MyPlot(self.ax[3], xlabel='t(s)', ylabel='yd(m/s)'))
+
+    def update(self, t, reference, states, ctrl, is_type="hover"):
         # Update the time history of all plot variables
         self.time_history.append(t)
-        self.xref_history.append(reference.item(0))
-        self.x_history.append(states.item(0))
-        self.yref_history.append(reference.item(1))
-        self.y_history.append(states.item(1))
-        self.zref_history.append(reference.item(2))
-        self.z_history.append(states.item(2))
 
-        # Add angular control views
-        self.psiref_history.append(reference.item(3))
-        self.psi_history.append(states.item(3))
-        # self.thetaref_history.append(reference.item(4))
-        self.theta_history.append(states.item(4))
-        # self.phiref_history.append(reference.item(5))
-        self.phi_history.append(states.item(5))
+        if is_type == "hover":
+            self.xref_history.append(reference.item(0))
+            self.x_history.append(states.item(0))
+            self.yref_history.append(reference.item(1))
+            self.y_history.append(states.item(1))
+            self.zref_history.append(reference.item(2))
+            self.z_history.append(states.item(2))
 
-        # Update the plots with associated handles
-        self.handle[0].update(self.time_history, [self.x_history, self.xref_history])
-        self.handle[1].update(self.time_history, [self.y_history, self.yref_history])
-        self.handle[2].update(self.time_history, [self.z_history, self.zref_history])
+            # Add angular control views
+            self.psiref_history.append(reference.item(3))
+            self.psi_history.append(states.item(3))
+            self.theta_history.append(states.item(4))
+            self.phi_history.append(states.item(5))
 
-        self.handle[3].update(self.time_history, [self.psi_history, self.psiref_history])
-        self.handle[4].update(self.time_history, [self.theta_history])
-        self.handle[5].update(self.time_history, [self.phi_history])
+            # Update the plots with associated handles
+            self.handle[0].update(self.time_history, [self.x_history, self.xref_history])
+            self.handle[1].update(self.time_history, [self.y_history, self.yref_history])
+            self.handle[2].update(self.time_history, [self.z_history, self.zref_history])
+            self.handle[3].update(self.time_history, [self.psi_history, self.psiref_history])
+            self.handle[4].update(self.time_history, [self.theta_history])
+            self.handle[5].update(self.time_history, [self.phi_history])
+        
+        elif is_type == "traj":
+            self.xref_history.append(reference.item(0))
+            self.x_history.append(states.item(0))
+            self.yref_history.append(reference.item(1))
+            self.y_history.append(states.item(1))
+            self.xdref_history.append(reference.item(2))
+            self.xd_history.append(states.item(2))
+            self.ydref_history.append(reference.item(3))
+            self.yd_history.append(states.item(3))
+
+            # Update the plots with associated handles
+            self.handle[0].update(self.time_history, [self.x_history, self.xref_history])
+            self.handle[1].update(self.time_history, [self.y_history, self.yref_history])
+            self.handle[2].update(self.time_history, [self.xd_history, self.xdref_history])
+            self.handle[3].update(self.time_history, [self.yd_history, self.ydref_history])
 
 class MyPlot:
     def __init__(self, ax, xlabel='', ylabel='', title='', legend=None):

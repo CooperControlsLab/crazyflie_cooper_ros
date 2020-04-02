@@ -211,7 +211,7 @@ class XYTrajController:
 
         self.r_prev = np.array([0.0, 0.0])
 
-        self.t_phys = 1 / 30.0
+        self.t = P.t_ob
         self.g = 9.80665
 
         self.time_now = 0.0
@@ -261,13 +261,13 @@ class XYTrajController:
         e_p = r_t - r
 
         # Calculate velocity error component
-        rd = (r - self.r_prev) / self.t_phys
+        rd = (r - self.r_prev) / self.t
         self.r_prev = r
         e_v = rd_t - rd
 
         # Save out data if desired
         if is_pickling:
-            self.time_now += self.t_phys
+            self.time_now += self.t
             self.time_list.append(self.time_now)
             self.x_list.append(r[0])
             self.x_t_list.append(r_t[0])
