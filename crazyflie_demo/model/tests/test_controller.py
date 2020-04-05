@@ -406,15 +406,16 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                 #     anim.update(cf.state)
                 #     plt.pause(0.0000001)
 
-            # if show_anim:
-            #     plot.update(t, r, cf.state, u)
-            #     anim.update(cf.state)
-            #     plt.pause(0.0000001)
+            if show_anim:
+                plot.update(t, r, cf.state, u)
+                anim.update(cf.state)
+                plt.pause(0.0000001)
                 
-        if show_anim:
-            plot.update(t, r, cf.state, u)
-            anim.update(cf.state)
-            plt.pause(0.0000001)
+        # # Worst animation granularity, very fast
+        # if show_anim:
+        #     plot.update(t, r, cf.state, u)
+        #     anim.update(cf.state)
+        #     plt.pause(0.0000001)
 
     if save_plot:
         ax.plot(x_list, y_list, c='r')
