@@ -320,13 +320,15 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
 
     # Create class objects
     rate_ctrl = RateController(kp_p=70.0, \
-        kp_q=70.0, kp_r=20.0, ki_r=10.0)
-    attitude_ctrl = AttitudeController(kp=3.5, ki=2.0, kd=1.0)
+        kp_q=70.0, kp_r=70.0, ki_r=16.7)
+    attitude_ctrl = AttitudeController(kp=3.5, ki=2.0, kd=0.0)
     ctrl_mixer = ControlMixer()
-    # altitiude_ctrl = AltitudeController(ff=41000.0, kp=11000.0, ki=3500.0, kd=9000.0) # Phys values
+    # altitiude_ctrl = AltitudeController(t=P.t_phys, ff=41000.0, \
+        # kp=11000.0, ki=0.0, kd=1000.0) # Phys values
     altitiude_ctrl = AltitudeController()
-    xy_ctrl = XYController(kp=30.0, ki=2.0, cap=0.1396)
-    yaw_ctrl = YawController(kp=3.0, cap=3.49)
+    # xy_ctrl = XYController(kp=30.0, ki=2.0, cap=0.1396)
+    xy_ctrl = XYController(kp=30.0, ki=2.0, cap=30.0)
+    yaw_ctrl = YawController(kp=3.0, cap=200.0)
 
     # off-borad controller input values
     u_ob = np.array([
@@ -361,6 +363,7 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
         
         while t < t_next_plot: # offboard controller is slowest at 100 hz
             t_next_ob = t + P.t_ob
+            # t_next_phys = t + P.t_phys
             
             # Altitude off-board controller update
             u_ob[2,0] = altitiude_ctrl.update(r.item(2), cf.state.item(2))
@@ -375,6 +378,7 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
             u_ob[3,0] = yaw_ctrl.update(r.item(3), cf.state.item(3))
 
             while t < t_next_ob: # attitude controller runs at 250 hz
+            # while t < t_next_phys:
                 t_next_att = t + P.t_att
 
                 # Conduct attitude control
@@ -389,6 +393,13 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                     
                     # Update state of model
                     u = ctrl_mixer.update(u_ob.item(2), del_phi, del_theta, del_psi)
+                    
+                    # print("u in PWM", u)
+                    
+                    u = cf.pwm_to_rpm(u)
+
+                    # print("u in RPM", u)
+
                     y = cf.update(u)
                     
                     if save_plot:
@@ -400,7 +411,7 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                     #     plot.update(t, r, cf.state, u)
                     #     anim.update(cf.state)
                     #     plt.pause(0.0000001)
-                
+
                 # if show_anim:
                 #     plot.update(t, r, cf.state, u)
                 #     anim.update(cf.state)
@@ -429,4 +440,4 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
 
 if __name__ == "__main__":
     # Fly to simultaneous x, y, x, and yaw setpoints
-    test_all(1.0, 1.0, 1.0, 0.5, show_anim=True, save_plot=False) # works! 04/02/2020
+    test_all(0.0, 1.0, 1.0, 0.0, show_anim=True, save_plot=False) # works! 04/02/2020
