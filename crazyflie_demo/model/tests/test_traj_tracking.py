@@ -21,14 +21,12 @@ def test_traj(traj, show_anim=True, save_plot=False):
         anim = CrazyflieAnimation(traj)
 
     # Create class objects
-    rate_ctrl = RateController(kp_p=70.0, \
-        kp_q=70.0, kp_r=70.0, ki_r=16.7)
-    attitude_ctrl = AttitudeController(kp=3.5, ki=2.0, kd=0.0)
+    rate_ctrl = RateController()
+    attitude_ctrl = AttitudeController()
     ctrl_mixer = ControlMixer()
     altitiude_ctrl = AltitudeController()
-    # xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
-    xy_traj_ctrl = XYTrajController(kp=100.0, kd=100.0)
-    yaw_ctrl = YawController(kp=0.1, cap=200.0)
+    xy_traj_ctrl = XYTrajController()
+    yaw_ctrl = YawController()
 
     # off-borad controller input values
     u_ob = np.array([
@@ -53,12 +51,7 @@ def test_traj(traj, show_anim=True, save_plot=False):
         y_list = []
         ref_list = []
 
-    # while t < P.t_end: # plotter can run the slowest
-    
-    # for i in range(10):
-    #     t_next_plot = t + P.t_plot
-
-    # while t < t_next_plot: # offboard controller is slowest at 100 hz
+    # Use for loop to ensure at correct point in trajectory
     for i in range(traj.shape[0] - 1):
         t_next_ob = t + P.t_ob
 

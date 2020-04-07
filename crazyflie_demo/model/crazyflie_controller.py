@@ -21,7 +21,7 @@ import crazyflie_param as P
 # ])
 
 class RateController:
-    def __init__(self, t=P.t_rate, kp_p=1.0, kp_q=1.0, kp_r=70.0, ki_r=16.7):
+    def __init__(self, t=P.t_rate, kp_p=70.0, kp_q=70.0, kp_r=70.0, ki_r=16.7):
         self.kp_q = kp_q    # Pitch Rate Proportional Gain
         
         self.kp_p = kp_p    # Roll Rate Proportional Gain
@@ -112,7 +112,7 @@ class ControlMixer:
         return u_pwm
 
 class AltitudeController:
-    def __init__(self, t=P.t_ob, ff=46241.0, kp=11000.0, ki=1000.0, kd=2000.0):
+    def __init__(self, t=P.t_phys, ff=46241.0, kp=11000.0, ki=1000.0, kd=2000.0):
         # 44705
         self.ff = ff # Feedforward from Eq. 3.1.8 not used currently
         self.kp = kp
@@ -144,7 +144,7 @@ class AltitudeController:
         return del_omega_cap
 
 class XYController:
-    def __init__(self, t=P.t_ob, kp=30.0, ki=2.0, cap=0.524):
+    def __init__(self, t=P.t_phys, kp=30.0, ki=2.0, cap=0.524):
         self.kp = kp
         self.ki = ki
         self.cap = cap
@@ -223,7 +223,7 @@ class YawController:
         return r_c
 
 class XYTrajController:
-    def __init__(self, kp=100.0, kd=100.0, k_ff=10.0, cap=30.0):
+    def __init__(self, t=P.t_phys, kp=100.0, kd=100.0, k_ff=10.0, cap=30.0):
         self.kp = kp
         self.kd = kd # adding damping
         self.k_ff = k_ff
@@ -231,7 +231,7 @@ class XYTrajController:
 
         self.r_prev = np.array([0.0, 0.0])
 
-        self.t = P.t_phys
+        self.t = t
         self.g = 9.80665
 
         self.time_now = 0.0
