@@ -8,15 +8,15 @@ class CrazyflieDynamics:
             [init_pos[0]],     # 0
             [init_pos[1]],     # 1
             [init_pos[2]],     # 2
-            [P.psi0],   # 3
-            [P.theta0], # 4
-            [P.phi0],   # 5
-            [P.u0],     # 6
-            [P.v0],     # 7
-            [P.w0],     # 8
-            [P.r0],     # 9
-            [P.q0],     # 10
-            [P.p0],     # 11
+            [P.psi0],          # 3
+            [P.theta0],        # 4
+            [P.phi0],          # 5
+            [P.u0],            # 6
+            [P.v0],            # 7
+            [P.w0],            # 8
+            [P.r0],            # 9
+            [P.q0],            # 10
+            [P.p0],            # 11
         ])
         # self.state[0] = init_pos[0]; self.state[1] = init_pos[1]; self.state[2] = init_pos[2]
         # Time stept_phys
@@ -54,11 +54,39 @@ class CrazyflieDynamics:
         return y
     
     def state_dot(self, state, u):
-        # Returns the deivative of the state vector
-        # Uses state-space equations provided on pg. 15
-        # xdot = np.matmul(self.A, self.state) + np.matmul(self.B, u)
+        """
+        Uses state-space equations provided on pg. 15 to calculate 
+        linearized time-derivative of state vector
+
+        Parameters:
+        -----------
+        state = 12-variable state vector of cf
+        u     = 4-varibale control input vector of cf
+
+        Returns:
+        --------
+        xdot  = time-derivative of the state vector
+        """
         xdot = np.matmul(self.A, self.state) + self.omega_e * np.matmul(self.B, u)
+        # xdot = np.matmul(self.A, self.state) + np.matmul(self.B, u)
         return xdot
+    
+    # def state_dot_nonlinear(self, state, u):
+    #     """
+    #     Uses state-space equations provided on pg. 15 to calculate 
+    #     nonlinear time-derivative of state vector
+
+    #     Parameters:
+    #     -----------
+    #     state = 12-variable state vector of cf
+    #     u     = 4-varibale control input vector of cf
+
+    #     Returns:
+    #     --------
+    #     xdot  = time-derivative of the state vector
+    #     """
+    #     xdot = np.matmul(self.A, self.state) + self.omega_e * np.matmul(self.B, u)
+    #     return xdot
     
     def h(self):
         # Returns y = h(x) - Finds position and orientation
@@ -77,7 +105,7 @@ class CrazyflieDynamics:
         # Takes PWM signal sent to motors by the controller and converts to propellor RPM
         u = np.empty_like(u_pwm)
         for idx in range(u.shape[0]):
-            u[idx] = 0.2685 * u_pwm[idx] + 4070.3 # Eq. 2.6.1
+            u[idx] = (0.2685 * u_pwm[idx] + 4070.3) - self.omega_e # Eq. 2.6.1 subtracted from equillibrium point
         return u
 
     def euler_step(self, u):
@@ -94,6 +122,7 @@ class CrazyflieDynamics:
         self.state += self.Ts / 6 * (F1 + 2 * F2 + 2 * F3 + F4)
 
     def saturate(self, u, limit):
+        # saturate control input vector to provided caps
         for idx in range(u.shape[0]):
             if abs(u[idx,0]) > limit[idx,0]:
                 u[idx,0] = limit[idx,0]*np.sign(u[idx,0])
@@ -105,7 +134,7 @@ if __name__ == "__main__":
 
     # Symmetric input
     u = np.array([
-        [25000],
+        [10000],
         [10000],
         [10000],
         [10000],
@@ -127,5 +156,6 @@ if __name__ == "__main__":
     # Test saturate
     for _ in range(3):
         print(u)
+        u = cf.pwm_to_rpm(u)
         y = cf1.update(u)
         print(u)

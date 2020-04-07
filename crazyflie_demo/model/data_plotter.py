@@ -52,9 +52,9 @@ class DataPlotter:
             self.phi_history = []
 
             # Added input responses
-            self.phi_c_history = []
             self.theta_c_history = []
-            self.omega_c_hitory = []
+            self.phi_c_history = []
+            self.omega_c_history = []
             self.r_c_history = []
 
             # Create a handle for every subplot
@@ -78,8 +78,8 @@ class DataPlotter:
 
             # Create a handle for every subplot
             self.handle.append(MyPlot(self.ax[0], ylabel='x(m)', title='CF Sim Data'))
-            self.handle.append(MyPlot(self.ax[1], ylabel='y(m)'))
-            self.handle.append(MyPlot(self.ax[2], ylabel='xd(m/s)'))
+            self.handle.append(MyPlot(self.ax[1], ylabel='xd(m/s)'))
+            self.handle.append(MyPlot(self.ax[2], ylabel='y(m)'))
             self.handle.append(MyPlot(self.ax[3], xlabel='t(s)', ylabel='yd(m/s)'))
 
     def update(self, t, reference, states, ctrl, is_type="hover"):
@@ -96,20 +96,20 @@ class DataPlotter:
 
             # Add angular control views
             self.psiref_history.append(reference.item(3))
-            self.psi_history.append(states.item(3))
-            self.theta_history.append(states.item(4))
-            self.phi_history.append(states.item(5))
+            self.psi_history.append(57.2958*states.item(3))   # [deg]
+            self.theta_history.append(57.2958*states.item(4)) # [deg]
+            self.phi_history.append(57.2958*states.item(5))   # [deg]
 
             # Added input responses
-            self.phi_c_history.append(ctrl.item(0))
-            self.theta_c_history.append(ctrl.item(1))
-            self.omega_c_hitory.append(ctrl.item(2)/10000.0)
+            self.theta_c_history.append(ctrl.item(0))
+            self.phi_c_history.append(ctrl.item(1))
+            self.omega_c_history.append(ctrl.item(2)/10000.0)
             self.r_c_history.append(ctrl.item(3))
 
             # Update the plots with associated handles
             self.handle[0].update(self.time_history, [self.x_history, self.xref_history, self.theta_c_history])
             self.handle[1].update(self.time_history, [self.y_history, self.yref_history, self.phi_c_history])
-            self.handle[2].update(self.time_history, [self.z_history, self.zref_history, self.omega_c_hitory])
+            self.handle[2].update(self.time_history, [self.z_history, self.zref_history, self.omega_c_history])
             self.handle[3].update(self.time_history, [self.psi_history, self.psiref_history, self.r_c_history])
             self.handle[4].update(self.time_history, [self.theta_history])
             self.handle[5].update(self.time_history, [self.phi_history])
@@ -120,14 +120,14 @@ class DataPlotter:
             self.yref_history.append(reference.item(1))
             self.y_history.append(states.item(1))
             self.xdref_history.append(reference.item(2))
-            self.xd_history.append(states.item(2))
+            self.xd_history.append(states.item(6))
             self.ydref_history.append(reference.item(3))
-            self.yd_history.append(states.item(3))
+            self.yd_history.append(states.item(7))
 
             # Update the plots with associated handles
             self.handle[0].update(self.time_history, [self.x_history, self.xref_history])
-            self.handle[1].update(self.time_history, [self.y_history, self.yref_history])
-            self.handle[2].update(self.time_history, [self.xd_history, self.xdref_history])
+            self.handle[1].update(self.time_history, [self.xd_history, self.xdref_history])
+            self.handle[2].update(self.time_history, [self.y_history, self.yref_history])
             self.handle[3].update(self.time_history, [self.yd_history, self.ydref_history])
 
 class MyPlot:

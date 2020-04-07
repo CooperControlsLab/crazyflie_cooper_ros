@@ -22,13 +22,13 @@ def test_traj(traj, show_anim=True, save_plot=False):
 
     # Create class objects
     rate_ctrl = RateController(kp_p=70.0, \
-        kp_q=70.0, kp_r=20.0, ki_r=10.0)
-    attitude_ctrl = AttitudeController(t=P.t_att, kp=3.5, ki=2.0, kd=1.0)
+        kp_q=70.0, kp_r=70.0, ki_r=16.7)
+    attitude_ctrl = AttitudeController(kp=3.5, ki=2.0, kd=0.0)
     ctrl_mixer = ControlMixer()
     altitiude_ctrl = AltitudeController()
     # xy_ctrl = XYController(t=P.t_ob, kp=20.0, ki=2.0, cap=0.1396)
-    xy_traj_ctrl = XYTrajController()
-    yaw_ctrl = YawController(kp=3.0, cap=3.49)
+    xy_traj_ctrl = XYTrajController(kp=100.0, kd=100.0)
+    yaw_ctrl = YawController(kp=0.1, cap=200.0)
 
     # off-borad controller input values
     u_ob = np.array([
@@ -80,11 +80,9 @@ def test_traj(traj, show_anim=True, save_plot=False):
         r_t_vect = np.array([traj[i+1, 0], traj[i+1, 3]]) - r_t # vector from current pos to next pos in traj
         rd_t     = np.array([traj[i, 1], traj[i, 4]]) # traj vel values
         rdd_t    = np.array([traj[i, 2], traj[i, 5]])
-        x = cf.state.item(0); y = cf.state.item(1)
-        r        = np.array([x, y]) # actual drone pos
 
         # X-Y off-board controller update
-        u_ob[0,0], u_ob[1,0] = xy_traj_ctrl.update(r_t, rd_t, r_t_vect, r, psi_c, rdd_t)
+        u_ob[0,0], u_ob[1,0] = xy_traj_ctrl.update(r_t, rd_t, r_t_vect, cf.state, psi_c, rdd_t)
 
         while t < t_next_ob: # attitude controller runs at 250 hz
             t_next_att = t + P.t_att
@@ -121,7 +119,7 @@ def test_traj(traj, show_anim=True, save_plot=False):
         if show_anim:
             plot.update(t, ref, cf.state, u, is_type="traj")
             anim.update(cf.state)
-            plt.pause(0.0000001)    
+            plt.pause(0.00000001)    
 
         if save_plot:
             ax.plot(x_list, y_list, c='r')
@@ -143,9 +141,9 @@ if __name__ == "__main__":
     traj_gen = TrajGenerator()
     x_center = 0.0; y_center = 0.0
     omega = 1.0
-    no_osc = 0.1
+    no_osc = 2.0
     circle_traj = traj_gen.genCircleTraj(x_c, y_c, x_center, y_center, \
-        omega, no_osc, CCW=True)
+        omega, no_osc, CCW=False)
 
     # print(circle_traj.shape[1])
     test_traj(circle_traj)
