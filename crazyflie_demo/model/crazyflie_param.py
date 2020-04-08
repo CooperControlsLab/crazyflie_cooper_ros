@@ -3,39 +3,40 @@ import numpy as np
 g = 9.80665 # [m/s^2]
 
 # Physical Parameters of the Crazyflie 2.0
-m = 0.35          # Crazyflie 2.0 mass w/ 4 Vicon markers [g]
+m = 0.035         # Crazyflie 2.0 mass w/ 4 Vicon markers [g]
 Ct = 3.1582e-10   # Thrust coeff [N/rpm^2]
-Cd = 7.9379e-10   # Drag coeff [Nm/rpm^2]
+Cd = 7.9379e-12   # Drag coeff [Nm/rpm^2]
 Ixx = 1.395e-5    # Moment of inertia [Kg x m^2]
 Iyy = 1.436e-5    # Moment of inertia [Kg x m^2]
 Izz = 2.173e-5    # Moment of inertia [Kg x m^2]
 d = 39e-3         # Crazyflie 2.0 arm length [m]
-omega_e = 16073.0 # Hover RPM [RPM]
+# omega_e = 16073.0 # Hover RPM [RPM]
+omega_e = 16486.0
 
 # Initial Conditions, state vector formed following:
 # https://arxiv.org/pdf/1608.05786.pdf
 x0 = 0.0     # X position [m]
 y0 = 0.0     # Y position [m]
 z0 = 0.0     # Z position [m]
-psi0 = 0.0   # Yaw angle [rad]
-theta0 = 0.0 # Pitch angle [rad]
-phi0 = 0.0   # Roll angle [rad]
+psi0 = 0.0   # Yaw angle [deg]
+theta0 = 0.0 # Pitch angle [deg]
+phi0 = 0.0   # Roll angle [deg]
 u0 = 0.0     # Body frame X linear velocity [m/s]
 v0 = 0.0     # Body frame Y linear velocity [m/s]
 w0 = 0.0     # Body frame Z linear velocity [m/s]
-r0 = 0.0     # Body frame yaw angular velocity [rad/s]
-q0 = 0.0     # Body frame pitch angular velocity [rad/s]
-p0 = 0.0     # Body frame roll angular velocity [rad/s]
+r0 = 0.0     # Body frame yaw angular velocity [deg/s]
+q0 = 0.0     # Body frame pitch angular velocity [deg/s]
+p0 = 0.0     # Body frame roll angular velocity [deg/s]
 
 # Simulation Parameters
 t_start = 0.0 # [s]
-t_end = 10.0  # [s]
+t_end = 10.0*(30.0/100.0)  # [s]
 Ts = 0.01     # [s]
 
 freq_rate_ctrl = 500.0
 t_rate = 1/freq_rate_ctrl 
 
-freq_attitude_ctrl = 250.0 
+freq_attitude_ctrl = 250.0
 t_att = 1/freq_attitude_ctrl
 
 freq_off_board = 100.0

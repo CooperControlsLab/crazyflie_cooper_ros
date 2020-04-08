@@ -75,10 +75,15 @@ class CrazyflieAnimation:
         ax.scatter(pts[0], pts[1], pts[2], s=1, c='k')
 
         # Plot the drone trail
-        ax.plot(self.x_list, self.y_list, self.z_list, c='r')
+        ax.plot(self.x_list, self.y_list, self.z_list, c='r', label='path', alpha=0.5)
 
-        # Plot hover setpoint
-        ax.scatter(self.traj[0], self.traj[1], self.traj[2], s=10, c='b', marker='x')
+        # Plot hover setpoint or trajectory
+        if self.traj.shape[0] > 3:
+            ax.plot(self.traj[:,0], self.traj[:,3], self.traj[:,6], c='b')
+        else:
+            ax.scatter(0.0, 0.0, 0.0, c='g', marker='x', s=20, label='start')
+            ax.scatter(self.traj[0], self.traj[1], self.traj[2], c='b', marker='x', s=20, label='goal')
+            ax.legend()
 
 if __name__ == "__main__":
     cf = CrazyflieDynamics()

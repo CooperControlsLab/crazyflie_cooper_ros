@@ -43,21 +43,35 @@ class StandingWaveGenerator:
             traj = np.vstack((traj,temp))
             t += self.t_phys
         
-        if show_plots:
-            num_rows = 3; num_cols = 1
-            fig, ax = plt.subplots(num_rows, num_cols, sharex=True, figsize=(12,9))
+        traj = traj[1:,:]
 
-            ax[0].plot(traj[:,3], traj[:,0], c='r') # plot pos vs. time
-            ax[1].plot(traj[:,3], traj[:,1], c='b') # plot vel vs. time
-            ax[2].plot(traj[:,3], traj[:,2], c='g') # plot vel vs. time
-            ax[0].set_title('Standing Wave Trajectory')
-            ax[0].set_ylabel('position [m]')
-            ax[1].set_ylabel('velocity [m/s]')
-            ax[2].set_ylabel('acceleration [m/s^2]')
-            ax[2].set_xlabel('time [s]')
-            ax[0].grid(True)
-            ax[1].grid(True)
-            ax[2].grid(True)
+        if show_plots:
+            plt.figure()
+            plt.plot(traj[:,3], traj[:,0], c='r', label='pos [m]') # plot pos vs. time
+            plt.plot(traj[:,3], traj[:,1], c='b', label='vel [m/s]') # plot vel vs. time
+            plt.plot(traj[:,3], traj[:,2], c='g', label='acc [m/s^2]') # plot vel vs. time
+
+            plt.title('Standing Wave Trajectory')
+            plt.ylabel('x-components')
+            plt.xlabel('t [s]')
+            plt.grid(True)
+            plt.legend(loc="right")
+            # plt.legend()
+
+            # num_rows = 3; num_cols = 1
+            # fig, ax = plt.subplots(num_rows, num_cols, sharex=True, figsize=(12,9))
+
+            # ax[0].plot(traj[:,3], traj[:,0], c='r') # plot pos vs. time
+            # ax[1].plot(traj[:,3], traj[:,1], c='b') # plot vel vs. time
+            # ax[2].plot(traj[:,3], traj[:,2], c='g') # plot vel vs. time
+            # ax[0].set_title('Standing Wave Trajectory')
+            # ax[0].set_ylabel('position [m]')
+            # ax[1].set_ylabel('velocity [m/s]')
+            # ax[2].set_ylabel('acceleration [m/s^2]')
+            # ax[2].set_xlabel('time [s]')
+            # ax[0].grid(True)
+            # ax[1].grid(True)
+            # ax[2].grid(True)
             # ax[0].legend()
 
             # # Plot potential drone positions
@@ -135,29 +149,36 @@ class TrajGenerator:
             t += self.t_phys
 
         if show_plots:
-            num_rows = 3; num_cols = 1
-            fig, ax = plt.subplots(num_rows, num_cols, figsize=(6,12))
 
-            ax[0].plot(traj[:,0], traj[:,3], c='r')
-            ax[0].scatter(x_center, y_center, marker='x', c='r', s=100)
-            ax[0].scatter(x_c, y_c, marker='x', c='b', s=100, label='drone start')
+            plt.figure()
+            plt.plot(traj[:,0], traj[:,3], c='r')
+            plt.scatter(x_center, y_center, marker='x', c='r', s=100)
+            plt.scatter(x_c, y_c, marker='x', c='b', s=100, label='drone start')
             # ax[0].plot(traj[:,3], traj[:,1], c='b', label='vel')
-            ax[0].set_title('Circle Trajectory')
-            ax[0].set_ylabel('y-pos [m]')
-            ax[0].set_xlabel('x-pos [m]')
-            ax[0].legend()
+            plt.title('Circle Trajectory')
+            plt.ylabel('y-pos [m]')
+            plt.xlabel('x-pos [m]')
+            plt.legend()
 
-            ax[1].plot(time_list, traj[:,0], c='r', label='pos')
-            ax[1].plot(time_list, traj[:,1], c='b', label='vel')
-            ax[1].plot(time_list, traj[:,2], c='g', label='acc')
-            ax[1].legend()
+            num_rows = 2; num_cols = 1
+            fig, ax = plt.subplots(num_rows, num_cols, sharex=True, figsize=(6,6))
+
+            ax[0].plot(time_list, traj[:,0], c='r', label='pos [m]')
+            ax[0].plot(time_list, traj[:,1], c='b', label='vel [m/s]')
+            ax[0].plot(time_list, traj[:,2], c='g', label='acc [m/s^2]')
+            ax[0].set_title('Circular Trajectory Components')
+            ax[0].set_ylabel('x-components')
+            # ax[0].set_xlabel('t [s]')
+            ax[0].legend(loc="right")
+            ax[0].grid(True)
+
+            ax[1].plot(time_list, traj[:,3], c='r', label='pos [m]')
+            ax[1].plot(time_list, traj[:,4], c='b', label='vel [m/s]')
+            ax[1].plot(time_list, traj[:,5], c='g', label='acc [m/s^2]')
+            ax[1].set_ylabel('y-components')
+            ax[1].set_xlabel('t [s]')
+            ax[1].legend(loc="right")
             ax[1].grid(True)
-
-            ax[2].plot(time_list, traj[:,3], c='r', label='pos')
-            ax[2].plot(time_list, traj[:,4], c='b', label='vel')
-            ax[2].plot(time_list, traj[:,5], c='g', label='acc')
-            ax[2].legend()
-            ax[2].grid(True)
 
         return traj
 
@@ -165,7 +186,7 @@ def plotWaveTraj():
     wave_traj = StandingWaveGenerator()
     frequency = 1.0 # lower is slower
     amplitude = 0.5
-    no_oscillations = 3.0
+    no_oscillations = 2.0
     no_drones = 3
     y_c = 0.0
     traj = wave_traj.genWaveTraj(amplitude, frequency, \
@@ -174,15 +195,17 @@ def plotWaveTraj():
 
 def plotCircleTraj():
     traj_gen = TrajGenerator()
-    x_c = 0.5; y_c = 0.0
+    x_c = 0.5; y_c = 0.2
     x_center = 0.0; y_center = 0.0
     omega = 1.0
     no_osc = 2.0
     circle_traj = traj_gen.genCircleTraj(x_c, y_c, x_center, y_center, \
-        omega, no_osc, CCW=False, show_plots=True)
+        omega, no_osc, CCW=True, show_plots=True)
     plt.show()
 
 if __name__ == "__main__":
     # plotWaveTraj()
 
     plotCircleTraj()
+
+    plot.show()
