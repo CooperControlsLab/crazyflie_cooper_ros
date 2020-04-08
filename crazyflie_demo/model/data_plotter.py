@@ -31,7 +31,7 @@ class DataPlotter:
         self.num_cols = 1
 
         # Create figure and axis handles
-        self.fig, self.ax = plt.subplots(self.num_rows, self.num_cols, sharex=True, figsize=(6,12))
+        self.fig, self.ax = plt.subplots(self.num_rows, self.num_cols, sharex=True, figsize=(10,12))
 
         # Instatiate lists to hold the time and data histories
         self.time_history = [] # time
@@ -58,12 +58,12 @@ class DataPlotter:
             self.r_c_history = []
 
             # Create a handle for every subplot
-            self.handle.append(MyPlot(self.ax[0], ylabel='x(m)', title='CF Sim Data'))
-            self.handle.append(MyPlot(self.ax[1], ylabel='y(m)'))
-            self.handle.append(MyPlot(self.ax[2], ylabel='z(m)'))
-            self.handle.append(MyPlot(self.ax[3], ylabel='psi(deg)'))
-            self.handle.append(MyPlot(self.ax[4], ylabel='theta(deg)'))
-            self.handle.append(MyPlot(self.ax[5], xlabel='t(s)', ylabel='phi(deg)'))
+            self.handle.append(MyPlot(self.ax[0], ylabel='x [m]', title='CF Sim Data'))
+            self.handle.append(MyPlot(self.ax[1], ylabel='y [m]'))
+            self.handle.append(MyPlot(self.ax[2], ylabel='z [m]'))
+            self.handle.append(MyPlot(self.ax[3], ylabel='psi [deg]'))
+            self.handle.append(MyPlot(self.ax[4], ylabel='theta [deg]'))
+            self.handle.append(MyPlot(self.ax[5], xlabel='t [s]', ylabel='phi [deg]'))
 
         elif is_type == "traj":
             self.x_history = [] # position x
@@ -77,10 +77,10 @@ class DataPlotter:
             self.ydref_history = []
 
             # Create a handle for every subplot
-            self.handle.append(MyPlot(self.ax[0], ylabel='x(m)', title='CF Sim Data'))
-            self.handle.append(MyPlot(self.ax[1], ylabel='xd(m/s)'))
-            self.handle.append(MyPlot(self.ax[2], ylabel='y(m)'))
-            self.handle.append(MyPlot(self.ax[3], xlabel='t(s)', ylabel='yd(m/s)'))
+            self.handle.append(MyPlot(self.ax[0], ylabel='x [m]', title='CF Sim Data'))
+            self.handle.append(MyPlot(self.ax[1], ylabel='xd [m/s]'))
+            self.handle.append(MyPlot(self.ax[2], ylabel='y [m]'))
+            self.handle.append(MyPlot(self.ax[3], xlabel='t [s]', ylabel='yd [m/s]'))
 
     def update(self, t, reference, states, ctrl, is_type="hover"):
         # Update the time history of all plot variables
@@ -117,10 +117,13 @@ class DataPlotter:
         elif is_type == "traj":
             self.xref_history.append(reference.item(0))
             self.x_history.append(states.item(0))
-            self.yref_history.append(reference.item(1))
-            self.y_history.append(states.item(1))
-            self.xdref_history.append(reference.item(2))
+            
+            self.xdref_history.append(reference.item(1))
             self.xd_history.append(states.item(6))
+
+            self.yref_history.append(reference.item(2))
+            self.y_history.append(states.item(1))
+
             self.ydref_history.append(reference.item(3))
             self.yd_history.append(states.item(7))
 
@@ -129,6 +132,8 @@ class DataPlotter:
             self.handle[1].update(self.time_history, [self.xd_history, self.xdref_history])
             self.handle[2].update(self.time_history, [self.y_history, self.yref_history])
             self.handle[3].update(self.time_history, [self.yd_history, self.ydref_history])
+
+            self.fig.savefig("../plots/traj_sw_sim_comp_20200408")
 
 class MyPlot:
     def __init__(self, ax, xlabel='', ylabel='', title='', legend=None):

@@ -33,15 +33,15 @@ class RateController:
         self.t = t
 
     def update(self, q_c, p_c, r_c, state):
+        # Convert from rad to deg
         q = 57.2958*state.item(10); p = 57.2958*state.item(11)
-
         del_theta = self.kp_q * (q_c - q)
-
         del_phi = self.kp_p * (p_c - p)
 
-        e_r = r_c - state.item(9)
+        r = 57.2958*state.item(9)
+        e_r = r_c - r
         self.e_r_hist += (e_r * self.t)
-        del_psi = self.kp_r * (r_c - state.item(9)) + (self.ki_r * self.e_r_hist)
+        del_psi = (self.kp_r * e_r) + (self.ki_r * self.e_r_hist)
 
         return del_phi, del_theta, del_psi
         # used in control mixer
@@ -78,7 +78,7 @@ class AttitudeController:
         q_c = (self.kp_theta * e_theta) + (self.ki_theta * self.e_theta_hist) \
             + (self.kd_theta * e_theta_der)
 
-        print('theta {} theta_c {} e_theta {} q_c {}'.format(theta, theta_c, e_theta, q_c))
+        # print('theta {} theta_c {} e_theta {} q_c {}'.format(theta, theta_c, e_theta, q_c))
 
         e_phi = phi_c - phi
         self.e_phi_hist += (e_phi * self.t)
@@ -112,8 +112,9 @@ class ControlMixer:
         return u_pwm
 
 class AltitudeController:
-    def __init__(self, t=P.t_phys, ff=46241.0, kp=11000.0, ki=1000.0, kd=2000.0):
+    def __init__(self, t=P.t_phys, ff=46241.0, kp=11000.0, ki=5000.0, kd=1500.0):
         # 44705
+        # 46241
         self.ff = ff # Feedforward from Eq. 3.1.8 not used currently
         self.kp = kp
         self.ki = ki
@@ -144,7 +145,7 @@ class AltitudeController:
         return del_omega_cap
 
 class XYController:
-    def __init__(self, t=P.t_phys, kp=30.0, ki=2.0, cap=0.524):
+    def __init__(self, t=P.t_phys, kp=10.0, ki=2.0, cap=20.0):
         self.kp = kp
         self.ki = ki
         self.cap = cap
@@ -196,26 +197,33 @@ class XYController:
         return theta_c, phi_c
 
 class YawController:
-    def __init__(self, kp=0.1, cap=200.0):
+    def __init__(self, t=P.t_phys, kp=3.00, ki=0.0, cap=200.0):
         self.kp = kp
+        self.ki = ki
         self.cap = cap
+        self.e_hist = 0.0
+
+        self.t = t
     
-    def update(self, psi_c, psi):
+    def update(self, psi_c, psi_rad):
         """
         Off-Board global psi angle controller
 
         Parameters
         ----------
-        psi_c = psi angle setpoint [deg]
-        psi   = current psi angle [deg]
+        psi_c   = psi angle setpoint [deg]
+        psi_rad = current psi angle [rad]
 
         Returns
         -------
         r_c = commanded yaw rate [deg/s]
         """
-        psi = 57.2958*psi # convert from [rad] to [deg]
-        psi_e = psi_c - psi
-        r_c = self.kp * psi_e
+        psi = 57.2958*psi_rad # convert from [rad] to [deg]
+        e = psi_c - psi
+
+        self.e_hist += (e * self.t)
+
+        r_c = (self.kp * e) + (self.ki * self.e_hist)
 
         if np.abs(r_c) >= self.cap:
             r_c = np.sign(r_c) * self.cap

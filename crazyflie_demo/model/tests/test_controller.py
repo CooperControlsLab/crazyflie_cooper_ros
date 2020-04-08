@@ -1,5 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 # Import crazyflie model modules
 import sys
@@ -10,7 +11,7 @@ from crazyflie_controller import RateController, AttitudeController, ControlMixe
 import crazyflie_param as P
 from crazyflie_animation import CrazyflieAnimation
 
-def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
+def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False, plot_type='x'):
     cf = CrazyflieDynamics(init_pos=np.array([0.0, 0.0, 0.0]))
 
     if show_anim:
@@ -46,13 +47,24 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
 
     if save_plot:
         fig, ax = plt.subplots()
-        ax.set_title("CF Yaw Simulation")
-        ax.set_xlabel("time [s]")
-        ax.set_ylabel("psi [rad]")
         ax.grid()
         x_list = []
         y_list = []
         ref_list = []
+        ax.set_xlabel("time [s]")
+
+        if plot_type == 'x':
+            ax.set_title("CF X Simulation")
+            ax.set_ylabel("x [m]")
+        elif plot_type == 'y':
+            ax.set_title("CF Y Simulation")
+            ax.set_ylabel("y [m]")
+        elif plot_type == 'z':
+            ax.set_title("CF Z Simulation")
+            ax.set_ylabel("z [m]")
+        elif plot_type == 'psi':
+            ax.set_title("CF Yaw Rate Simulation")
+            ax.set_ylabel("psi [rad]")
 
     while t < P.t_end: # plotter can run the slowest
         t_next_plot = t + P.t_plot
@@ -105,9 +117,19 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                     y = cf.update(u)
                     
                     if save_plot:
-                        x_list.append(t)
-                        y_list.append(57.2958*cf.state.item(3))
-                        ref_list.append(r.item(3))
+                        x_list.append((100.0/30.0)*t)
+                        if plot_type == 'x':
+                            y_list.append(cf.state.item(0))
+                            ref_list.append(r.item(0))
+                        elif plot_type == 'y':
+                            y_list.append(cf.state.item(1))
+                            ref_list.append(r.item(1))
+                        elif plot_type == 'z':
+                            y_list.append(cf.state.item(2))
+                            ref_list.append(r.item(2))
+                        elif plot_type == 'psi':
+                            y_list.append(cf.state.item(3))
+                            ref_list.append(0.0174533*r.item(3))
                     
                     # if show_anim:
                     #     plot.update(t, r, cf.state, ctrl)
@@ -119,21 +141,28 @@ def test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False):
                 #     anim.update(cf.state)
                 #     plt.pause(0.0000001)
 
-            # if show_anim:
-            #     plot.update(t, r, cf.state, ctrl)
-            #     anim.update(cf.state)
-            #     plt.pause(0.0000001)
+            if show_anim:
+                plot.update(t, r, cf.state, ctrl)
+                anim.update(cf.state)
+                plt.pause(0.0000001)
                 
-        # Worst animation granularity, very fast
-        if show_anim:
-            plot.update(t, r, cf.state, ctrl)
-            anim.update(cf.state)
-            plt.pause(0.1)
+        # # Worst animation granularity, very fast
+        # if show_anim:
+        #     plot.update(t, r, cf.state, ctrl)
+        #     anim.update(cf.state)
+        #     plt.pause(0.1)
 
     if save_plot:
         ax.plot(x_list, y_list, c='r')
         ax.plot(x_list, ref_list, c='b')
-        fig.savefig("../plots/hover_yaw_1rad_sim")
+        if plot_type == 'x':
+            fig.savefig("../plots/hover_x_1m_sim")
+        elif plot_type == 'y':
+            fig.savefig("../plots/hover_y_1m_sim")
+        elif plot_type == 'z':
+            fig.savefig("../plots/hover_z_1m_sim_2")
+        elif plot_type == 'psi':
+            fig.savefig("../plots/hover_yaw_1rad_sim")
 
     if show_anim:
         print('Press key to close')
@@ -145,5 +174,6 @@ if __name__ == "__main__":
     x_c = 1.0     # [m]
     y_c = 1.0     # [m]
     z_c = 1.0     # [m]
-    psi_c = 0.0 # [deg]  
-    test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False) # works! 04/02/2020
+    psi_c = 0.0   # [deg]  
+    test_all(x_c, y_c, z_c, psi_c, show_anim=True, save_plot=False, \
+        plot_type='z') # works! 04/02/2020

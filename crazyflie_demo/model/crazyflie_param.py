@@ -30,7 +30,7 @@ p0 = 0.0     # Body frame roll angular velocity [deg/s]
 
 # Simulation Parameters
 t_start = 0.0 # [s]
-t_end = 10.0  # [s]
+t_end = 10.0*(30.0/100.0)  # [s]
 Ts = 0.01     # [s]
 
 freq_rate_ctrl = 500.0

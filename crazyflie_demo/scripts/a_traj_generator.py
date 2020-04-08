@@ -204,6 +204,8 @@ def plotCircleTraj():
     plt.show()
 
 if __name__ == "__main__":
-    plotWaveTraj()
+    # plotWaveTraj()
 
-    # plotCircleTraj()
+    plotCircleTraj()
+
+    plot.show()
