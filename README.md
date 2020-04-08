@@ -109,7 +109,7 @@ roslaunch crazyflie_demo a_traj_tracking.launch
 
 **Notes**: Follows a 2D version of the trajectory tracking controller described in seciton 2.2.2 of the following thesis: https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations
 
-#### Multi Drone Trajectory Tracking Mimicing Standing Wave Mode 1
+#### Multi Drone Trajectory Tracking Following Standing Wave Trajectories
 
 **Description**: Runs three drones following a standing wave pattern. Can run `a_traj_generator.py` in `scripts` folder to see wave creation options
 
