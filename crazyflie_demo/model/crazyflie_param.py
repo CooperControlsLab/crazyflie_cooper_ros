@@ -3,15 +3,14 @@ import numpy as np
 g = 9.80665 # [m/s^2]
 
 # Physical Parameters of the Crazyflie 2.0
-m = 0.035         # Crazyflie 2.0 mass w/ 4 Vicon markers [g]
+m = 0.035         # Crazyflie 2.0 mass w/ 4 Vicon markers [Kg]
 Ct = 3.1582e-10   # Thrust coeff [N/rpm^2]
 Cd = 7.9379e-12   # Drag coeff [Nm/rpm^2]
 Ixx = 1.395e-5    # Moment of inertia [Kg x m^2]
 Iyy = 1.436e-5    # Moment of inertia [Kg x m^2]
 Izz = 2.173e-5    # Moment of inertia [Kg x m^2]
 d = 39e-3         # Crazyflie 2.0 arm length [m]
-# omega_e = 16073.0 # Hover RPM [RPM]
-omega_e = 16486.0
+omega_e = 16486.0 # Hover RPM [RPM]
 
 # Initial Conditions, state vector formed following:
 # https://arxiv.org/pdf/1608.05786.pdf
@@ -30,39 +29,34 @@ p0 = 0.0     # Body frame roll angular velocity [deg/s]
 
 # Simulation Parameters
 t_start = 0.0 # [s]
-t_end = 10.0*(30.0/100.0)  # [s]
+# t_end = 10.0*(30.0/100.0)  # [s]
+t_end = 10.0  # [s]
 Ts = 0.01     # [s]
 
+# Rate controller update frequency
 freq_rate_ctrl = 500.0
 t_rate = 1/freq_rate_ctrl 
 
+# Attitude controller update frequency
 freq_attitude_ctrl = 250.0
 t_att = 1/freq_attitude_ctrl
 
+# Fastest possible off-Board controller update frequency (not used)
 freq_off_board = 100.0
 t_ob = 1/freq_off_board
 
+# Off-board controller update frequency used in physical flight tests
 freq_phys = 30.0
 t_phys = 1/freq_phys
 
+# Slowest plotter frequency to boost simulation speed
 freq_plot = 10.0
 t_plot = 1/freq_plot
 
-# Prop RPM saturation limits
-rpm_max = 21666.4
-input_limits = np.full((4, 1), rpm_max)
-
-# Outer loop saturation Limits
-phi_max = 30.0       # [rad]
-theta_max = 30.0     # [rad]
-r_max = 200.0        # [rad/s]
-thrust_max = 60000.0 # mapped to PWM output [N/A]
-ol_input_limits = np.array([
-    [phi_max],
-    [theta_max],
-    [r_max],
-    [thrust_max],
-])
+# Propeller max PWM saturation limits
+# rpm_max = 21666.4
+pwm_max = 65535
+input_limits = np.full((4, 1), pwm_max)
 
 # Construction of the necessary state-space matrices
 N = 12

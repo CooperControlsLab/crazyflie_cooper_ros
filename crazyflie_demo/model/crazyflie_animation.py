@@ -9,10 +9,10 @@ from crazyflie_dynamics import CrazyflieDynamics
 import crazyflie_param as P
 
 class CrazyflieAnimation:
-    """
-    Create CF animation
-    """
     def __init__(self, traj):
+        """
+        Create cf animation
+        """
         self.flag_init = True
         self.fig, self.ax = plt.subplots()
         self.handle = []
@@ -25,6 +25,9 @@ class CrazyflieAnimation:
         self.d = P.d
     
     def update(self, state):
+        """
+        Update the cf position and orientation
+        """
         x = state.item(0); y = state.item(1); z = state.item(2)
         phi = state.item(5); theta = state.item(4); psi = state.item(3)
         self.drawCrazyflie(x, y, z, phi, theta, psi)
@@ -35,7 +38,17 @@ class CrazyflieAnimation:
 
     def drawCrazyflie(self, x, y, z, phi, theta, psi):
         """
-        Plot a simple animation of the crazyflie
+        Plot visualization of crazyflie position and orientation 
+        that will get updated in the simulation loop
+
+        Parameters:
+        -----------
+        x     = x-position  [m]
+        y     = y-position  [m]
+        z     = z-position  [m]
+        phi   = roll angle  [rad]
+        theta = pitch angle [rad]
+        psi   = yaw angle   [rad]
         """
         # TODO: Find out why the sign convention is reversed for these - is in the rot matrix formulation?
         phi = -phi; theta = -theta; psi = -psi 
@@ -64,7 +77,7 @@ class CrazyflieAnimation:
         # append the historical cartesian positions
         self.x_list.append(x); self.y_list.append(y); self.z_list.append(z)
 
-        # Plot the drone
+        # plot the drone
         ax = plt.axes(projection='3d')
         ax.set_xlim(-1.2, 1.2)
         ax.set_ylim(-1.2, 1.2)
@@ -74,13 +87,13 @@ class CrazyflieAnimation:
         ax.set_zlabel('Z axis')
         ax.scatter(pts[0], pts[1], pts[2], s=1, c='k')
 
-        # Plot the drone trail
+        # plot the drone path
         ax.plot(self.x_list, self.y_list, self.z_list, c='r', label='path', alpha=0.5)
 
-        # Plot hover setpoint or trajectory
-        if self.traj.shape[0] > 3:
+        # plot hover starting point and goal or trajectory depending on controller used
+        if self.traj.shape[0] > 3: # traj traking controller
             ax.plot(self.traj[:,0], self.traj[:,3], self.traj[:,6], c='b')
-        else:
+        else: # hover controller
             ax.scatter(0.0, 0.0, 0.0, c='g', marker='x', s=20, label='start')
             ax.scatter(self.traj[0], self.traj[1], self.traj[2], c='b', marker='x', s=20, label='goal')
             ax.legend()

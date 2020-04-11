@@ -112,7 +112,7 @@ class ControlMixer:
         return u_pwm
 
 class AltitudeController:
-    def __init__(self, t=P.t_phys, ff=46241.0, kp=11000.0, ki=5000.0, kd=1500.0):
+    def __init__(self, t=P.t_phys, ff=46241.0, kp=11000.0, ki=3500.0, kd=9000.0):
         # 44705
         # 46241
         self.ff = ff # Feedforward from Eq. 3.1.8 not used currently
@@ -161,31 +161,16 @@ class XYController:
 
         xe = x_c - x; ye = y_c - y # Get position error
 
-        # print('xe {}\nye {}'.format(xe, ye))
-        # print('x_c {} x {}'.format(x_c, x))
-
-        # x_b = x * np.cos(psi) + y * np.sin(psi) # Get x in body frame
-        # u = (x_b - self.x_b_prev) / self.t # u is x-vel in body frame
-        # self.x_b_prev = x_b # Reset previous val
-
-        # y_b = -(x * np.sin(psi)) + y * np.cos(psi) # Get y in body frame
-        # v = (y_b - self.y_b_prev) / self.t # v is y-vel in body frame
-        # self.y_b_prev = y_b # Reset previous val
-
         xe_b = xe * np.cos(psi) + ye * np.sin(psi) # Get errors in body frame
         ye_b = -(xe * np.sin(psi)) + ye * np.cos(psi)
 
         self.xe_b_hist += ((xe_b - u) * self.t) # Accumulate and store histroical error
         self.ye_b_hist += ((ye_b - v) * self.t)
 
-        # print('xe {} u {} ye {} u {}'.format(xe, u, ye, v))
 
         # Control law - angles are in radians
         theta_c = ((xe_b - u) * ( self.kp)) + (self.xe_b_hist * ( self.ki)) # Eq. 3.1.11 and Eq. 3.1.12
         phi_c   = ((ye_b - v) * (-self.kp)) + (self.ye_b_hist * (-self.ki))
-
-        # 0.00116355*
-        # print('theta_c {} phi_c {}'.format(theta_c, phi_c))
 
         # Cap roll (y) and pitch (x) to prevent unstable maneuvers
         if np.abs(phi_c) >= self.cap:
@@ -241,17 +226,6 @@ class XYTrajController:
 
         self.t = t
         self.g = 9.80665
-
-        self.time_now = 0.0
-        self.time_list = []
-        self.x_list = []
-        self.x_t_list = []
-        self.y_list = []
-        self.y_t_list = []
-        self.xd_list = []
-        self.yd_list = []
-        self.xd_t_list = []
-        self.yd_t_list = []
     
     def normalize(self, a):
         """
@@ -291,10 +265,6 @@ class XYTrajController:
         r = np.array([x, y])
 
         e_p = r_t - r
-
-        # # Calculate velocity error component
-        # rd = (r - self.r_prev) / self.t
-        # self.r_prev = r
 
         # obtain u and v from state
         u = state.item(6); v = state.item(7)
