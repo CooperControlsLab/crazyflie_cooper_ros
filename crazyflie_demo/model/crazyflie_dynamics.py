@@ -49,7 +49,7 @@ class CrazyflieDynamics:
         u = self.saturate(u, self.input_limits) # saturate the inputs based on what is physically possible
         self._rk4_step(u) # propagate the state by one time sample
         mu = 0.0; sigma = 0.00007 # random noise parameters
-        self.state += random.gauss(mu, sigma) # simulate sensor noise
+        # self.state += random.gauss(mu, sigma) # simulate sensor noise
         y = self._h() # return the corresponding output
         return y
     

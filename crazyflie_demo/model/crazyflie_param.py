@@ -41,7 +41,7 @@ t_rate = 1/freq_rate_ctrl
 freq_attitude_ctrl = 250.0
 t_att = 1/freq_attitude_ctrl
 
-# Fastest possible off-Board controller update frequency (not used)
+# Fastest possible off-Board controller update frequency
 freq_off_board = 100.0
 t_ob = 1/freq_off_board
 
@@ -91,4 +91,3 @@ B[11, 1] = -np.sqrt(2) * d * (Ct/Ixx)
 B[11, 2] = np.sqrt(2) * d * (Ct/Ixx)
 B[11, 3] = np.sqrt(2) * d * (Ct/Ixx)
 
-# C = np.eye(12)

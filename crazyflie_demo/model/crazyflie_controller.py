@@ -270,21 +270,27 @@ class XYTrajController:
         u = state.item(6); v = state.item(7)
         rd = np.array([u, v])
 
+        # rd = (r - self.r_prev) / self.t
+        # self.r_prev = r
+
         e_v = rd_t - rd
+
+        print('e_v {} rd {} rd_t {}'.format(e_v, rd, rd_t))
         
         rdd_t = self.kp * e_p + self.kd * e_v \
             # + self.k_ff * rdd_t # optional feedforward component
         # print("total rdd_t {}".format(rdd_t))
 
-        theta_c = 1.0/self.g * (rdd_t[0] * np.sin(psi_c) - \
-            rdd_t[1] * np.cos(psi_c)) # equivalent to movement in -y direction
-        phi_c   = 1.0/self.g * (rdd_t[0] * np.cos(psi_c) + \
+        theta_c = 1.0/self.g * (rdd_t[0] * np.cos(psi_c) + \
             rdd_t[1] * np.sin(psi_c)) # equivalent to movement in +x direction
+        phi_c   = 1.0/self.g * (rdd_t[0] * np.sin(psi_c) - \
+            rdd_t[1] * np.cos(psi_c)) # equivalent to movement in -y direction
 
         # Cap roll (y) and pitch (x) to prevent unstable maneuvers
-        if np.abs(phi_c) >= self.cap:
-            phi_c =  np.sign(phi_c) * self.cap
         if np.abs(theta_c) >= self.cap:
             theta_c = np.sign(theta_c) * self.cap
+        if np.abs(phi_c) >= self.cap:
+            phi_c =  np.sign(phi_c) * self.cap
 
-        return phi_c, theta_c
+        # return phi_c, theta_c
+        return theta_c, phi_c

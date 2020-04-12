@@ -31,7 +31,8 @@ class DataPlotter:
         self.num_cols = 1
 
         # Create figure and axis handles
-        self.fig, self.ax = plt.subplots(self.num_rows, self.num_cols, sharex=True, figsize=(10,12))
+        self.fig, self.ax = plt.subplots(self.num_rows, self.num_cols, \
+            sharex=True, figsize=(10,12))
 
         # Instatiate lists to hold the time and data histories
         self.time_history = [] # time

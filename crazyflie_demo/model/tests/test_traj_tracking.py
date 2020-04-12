@@ -58,9 +58,13 @@ def test_traj(traj, traj_type='circ', show_anim=True, save_plot=False, \
             fig, ax = plt.subplots(4, 1, sharex=True, figsize=(10,12))
 
             ax[0].set_ylabel('x [m]'); ax[0].set_title('CF Sim Data')
+            ax[0].grid(True)
             ax[1].set_ylabel('xd [m/s]')
+            ax[1].grid(True)
             ax[2].set_ylabel('y [m]')
+            ax[2].grid(True)
             ax[3].set_xlabel('t [s]'); ax[3].set_ylabel('yd [m/s]')
+            ax[3].grid(True)
 
             t_list = []
             x_list = []
@@ -77,8 +81,10 @@ def test_traj(traj, traj_type='circ', show_anim=True, save_plot=False, \
 
     # Use for loop to ensure at correct point in trajectory
     for i in range(traj.shape[0] - 1):
-        # t_next_phys = t + P.t_phys
-        t_next_ob = t + P.t_ob
+        t_next_phys = t + P.t_phys
+        # t_next_ob = t + P.t_ob
+
+        print('cf psi {} and theta {}'.format(cf.state.item(3), cf.state.item(4)))
 
         # reference values
         if traj_type == 'circ':
@@ -115,13 +121,15 @@ def test_traj(traj, traj_type='circ', show_anim=True, save_plot=False, \
         # X-Y off-board controller update
         u_ob[0,0], u_ob[1,0] = xy_traj_ctrl.update(r_t, rd_t, r_t_vect, cf.state, psi_c, rdd_t)
 
-        # while t < t_next_phys: # attitude controller runs at 250 hz
-        while t < t_next_ob:
+        while t < t_next_phys: # attitude controller runs at 250 hz
+        # while t < t_next_ob:
             t_next_att = t + P.t_att
 
             # Conduct attitude control
             # phi controls x, theta controls y
-            p_c, q_c = attitude_ctrl.update(u_ob.item(0), u_ob.item(1), cf.state)
+            #                               phi_c         theta_c
+            p_c, q_c = attitude_ctrl.update(u_ob.item(0), u_ob.item(1), \
+                cf.state)
 
             while t < t_next_att: # rate controller is the fastest running at 500 hz
                 t = t + P.t_rate
@@ -144,12 +152,14 @@ def test_traj(traj, traj_type='circ', show_anim=True, save_plot=False, \
                 x_list.append(cf.state.item(0))
                 xref_list.append(ref.item(0))
 
+                # xd_list.append(rd[0])
                 xd_list.append(cf.state.item(6))
                 xdref_list.append(ref.item(1))
                 
                 y_list.append(cf.state.item(1))
                 yref_list.append(ref.item(2))
 
+                # yd_list.append(rd[1])
                 yd_list.append(cf.state.item(7))
                 ydref_list.append(ref.item(3))
 
@@ -165,15 +175,15 @@ def test_traj(traj, traj_type='circ', show_anim=True, save_plot=False, \
             ax.plot(xref_list, yref_list, c='b')
             fig.savefig("../plots/traj_circ_sim_2omega_20200408")
         elif plot_type == 'comp':
-            ax[0].plot(t_list, x_list, c='r')
-            ax[0].plot(t_list, xref_list, c='b')
-            ax[1].plot(t_list, xd_list, c='r')
-            ax[1].plot(t_list, xdref_list, c='b')
-            ax[2].plot(t_list, y_list, c='r')
-            ax[2].plot(t_list, yref_list, c='b')
-            ax[3].plot(t_list, yd_list, c='r')
-            ax[3].plot(t_list, ydref_list, c='b')
-            fig.savefig("../plots/traj_sim_20200411")
+            ax[0].plot(t_list[1:], x_list[1:], c='r')
+            ax[0].plot(t_list[1:], xref_list[1:], c='b')
+            ax[1].plot(t_list[1:], xd_list[1:], c='r')
+            ax[1].plot(t_list[1:], xdref_list[1:], c='b')
+            ax[2].plot(t_list[1:], y_list[1:], c='r')
+            ax[2].plot(t_list[1:], yref_list[1:], c='b')
+            ax[3].plot(t_list[1:], yd_list[1:], c='r')
+            ax[3].plot(t_list[1:], ydref_list[1:], c='b')
+            fig.savefig("../plots/traj_sim_20200412")
 
 if __name__ == "__main__":
     # Circle Traj
@@ -182,12 +192,13 @@ if __name__ == "__main__":
     x_c = 0.5
     psi_c = 0.0
 
-    traj_gen = TrajGenerator(hz=P.freq_off_board)
+    # traj_gen = TrajGenerator(hz=P.freq_off_board)
+    traj_gen = TrajGenerator()
     x_center = 0.0; y_center = 0.0
-    omega = 1.0
-    no_osc = 3.0
+    omega = 0.5
+    no_osc = 2.0
     circle_traj = traj_gen.genCircleTraj(x_c, y_c, x_center, y_center, \
         omega, no_osc, CCW=True)
 
-    test_traj(circle_traj, traj_type='circ', show_anim=False, \
+    test_traj(circle_traj, traj_type='sw', show_anim=False, \
         save_plot=True, plot_type='comp')
